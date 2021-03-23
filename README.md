@@ -1,6 +1,6 @@
 ## Welcome to custom-git
 
-A high productivity, open source, general-purpose git tool.
+An open source, general-purpose, command line git tool for high productivity.
 
 ### Usage
 
