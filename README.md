@@ -8,7 +8,7 @@ A high productivity, open source, general-purpose git tool.
 `gadd` is a customized version of `git add` command.
 A quick demo:
 <div>
-    <script id="asciicast-vWsQk9p9LDeu92PjQhMD0my9i" src="https://asciinema.org/a/vWsQk9p9LDeu92PjQhMD0my9i.js" data-cols="175" data-rows="30"></script>
+    <script id="asciicast-vWsQk9p9LDeu92PjQhMD0my9i" src="https://asciinema.org/a/vWsQk9p9LDeu92PjQhMD0my9i.js" data-cols="175" data-rows="40"></script>
 </div>
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
