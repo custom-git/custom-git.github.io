@@ -1,6 +1,143 @@
 ---
-layout: redirected
-redirect_to: https://raw.githubusercontent.com/bhavidhingra/custom-git/git_add/try
+layout: blank
 ---
 
-# Try again
+#!/usr/bin/env bash
+
+#set -x
+
+__SUCCESS=0
+__FAILURE=1
+
+function __is_fzf_installed() {
+
+    if command -v fzf &>/dev/null; then
+        echo true
+    else
+        echo false
+    fi
+}
+
+function __handle_fzf_installation() {
+
+    printf "\ncustom-git requires fzf (fuzzy finder) to work.\nAllow me to install it on your system? (y/n) : "
+    read __continue
+    if [[ "$__continue" != "y" ]]; then
+        __fzf_installation_status=$__FAILURE
+        return
+    fi
+    echo
+
+    __curDir=$(pwd)
+
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
+    cd ~/.fzf/
+    ./install --all
+
+    cd $__curDir
+}
+
+if [[ $(__is_fzf_installed) == false ]]; then
+    
+    __fzf_installation_status=$__SUCCESS
+    __handle_fzf_installation
+    if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
+        printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
+        return
+    fi
+    printf "\nNext:\n"
+    echo "1. Restart your shell."
+    echo "2. Source the custom-git try script again."
+    echo "\tsource <(curl -fsSL https://raw.githubusercontent.com/bhavidhingra/custom-git/git_add/try)"
+    echo "3. Try custom-git commands."
+fi
+
+FZF_WIDGET_TMUX=1
+if type rg &> /dev/null; then
+    export FZF_DEFAULT_COMMAND='rg --files'
+    export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window 'right:60%:wrap' --layout reverse --margin=1,4"
+fi
+
+function gadd() {
+
+    __assertgitrepo
+
+    # check for command line arguments
+    if [[ $# -gt 0 ]]; then
+        # use command line arguments
+        git add $*
+    else
+        __stage_modified_files
+        __stage_untracked_files
+    fi
+
+    gstatus
+}
+
+function __stage_modified_files() {
+
+    numModified=$(git diff --name-only | wc -l)
+    if [[ $numModified -eq 0 ]]; then
+        return
+    fi
+    gstatus
+    printf "\nstage modified files? (press enter / n) : "
+    read __continue
+    if [[ $__continue == "n" ]]; then
+        return
+    fi
+
+    git diff --name-only | sed 's/\* //g' | fzf -m --color fg:160 | \
+        while read -r __file; do
+            __file=$(echo "$__file" | xargs -I '{}' echo '{}')
+            git add "$__file"
+        done
+}
+
+
+function __stage_untracked_files() {
+
+    numUntracked=$(git status --porcelain | grep "^?? " | wc -l)
+    if [[ $numUntracked -eq 0 ]]; then
+        return
+    fi
+    gstatus
+    printf "\nstage untracked files? (press enter / n) : "
+    read __continue
+    if [[ $__continue == "n" ]]; then
+        return
+    fi
+
+    git status --porcelain | grep "^?? " | sed -e 's/^[?]* //' | fzf -m --color fg:160 | \
+        while read -r __file; do
+            __file=$(echo "$__file" | xargs -I '{}' echo '{}')
+            git add "$__file"
+        done
+}
+
+function gstatus() {
+    
+    __assertgitrepo
+
+    clear
+    git status
+}
+
+# util
+function __isgitrepo() {
+
+    if git rev-parse --git-dir > /dev/null 2>&1; then
+        # This is a valid git repository.
+        echo true
+    else
+        echo false
+    fi
+}
+
+function __assertgitrepo() {
+
+    if [[ $(__isgitrepo) == false ]]; then
+        echo "[ERROR] not a git repo."
+        return $__FAILURE
+    fi
+}
