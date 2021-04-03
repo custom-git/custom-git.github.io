@@ -44,7 +44,7 @@ if [[ $(__is_fzf_installed) == false ]]; then
     printf "\nNext:\n"
     echo "1. Restart your shell."
     echo "2. Source the custom-git try script again."
-    echo "\tsource <(curl -fsSL https://raw.githubusercontent.com/bhavidhingra/custom-git/git_add/try)"
+    echo "\tsource <(curl -fsS https://custom-git.io/try)"
     echo "3. Try custom-git commands."
 fi
 
