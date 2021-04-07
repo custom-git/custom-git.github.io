@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-#set -x
-
 __SUCCESS=0
 __FAILURE=1
-prefix='~/.custom-git'
-prefix_expand=~/.custom-git
+__prefix='~/.custom-git'
+__prefix_expand=~/.custom-git
+__currDir=$(pwd)
 
 function __is_fzf_installed() {
 
@@ -26,13 +25,10 @@ function __handle_fzf_installation() {
     fi
     echo
 
-    __curDir=$(pwd)
-
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
     cd ~/.fzf/
     ./install --all &> /dev/null
-
-    cd $__curDir
+    cd $__currDir
 }
 
 if [[ $(__is_fzf_installed) == false ]]; then
@@ -41,49 +37,48 @@ if [[ $(__is_fzf_installed) == false ]]; then
     __handle_fzf_installation
     if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
         printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
-        exit 1
+        return
     else
-        printf "fzf successfully installed.\n"
+        printf "fzf successfully installed.\n\n"
     fi
 fi
 
-if [[ -d $prefix_expand ]]; then
+if [[ -d $__prefix_expand ]]; then
     echo "custom-git is already installed. Stopping installation."
-    exit 0
+    return
 fi
 
-git clone https://github.com/custom-git/custom-git-bash.git $prefix_expand &> /dev/null
+git clone https://github.com/custom-git/custom-git-bash.git $__prefix_expand &> /dev/null
 if [[ $? != $__SUCCESS ]]; then
     echo "Some error occurred while fetching custom-git. Please check your network."
-    exit 1
+    return
 fi
 
-if [[ ! -d $prefix_expand ]]; then
-    echo "Couldn't create the directory $prefix. Stopping installation."
-    exit 1
+if [[ ! -d $__prefix_expand ]]; then
+    echo "Couldn't create the directory $__prefix. Stopping installation."
+    return
 fi
 
-cd $prefix_expand
+cd $__prefix_expand
 custom_git_base=$(pwd)
+cd $__currDir
 
 archi=$(uname -sm)
-shells="bash zsh"
+shells=("bash" "zsh")
 
-for s in $shells; do
+for s in "${shells[@]}"; do
     if ! command -v "$s" > /dev/null; then
-        shells=${shells/$s/}
+        unset shells[$s]
     fi
 done
 
-if [[ ${#shells} -lt 3 ]]; then
+if [[ ${#shells[@]} -eq 0 ]]; then
     echo "custom-git is only supported for bash and zsh shells. Stopping installation."
-    exit 1
+    return
 fi
 
-echo
 for shell in $shells; do
-    src=${prefix_expand}.${shell}
-    echo -n "Generate $src ..."
+    src=${__prefix_expand}.${shell}
 
     cat > "$src" << EOF
 # Setup custom-git
@@ -99,7 +94,6 @@ FZF_WIDGET_TMUX=1
 export FZF_DEFAULT_OPTS="--height 80% --layout reverse --border --ansi --preview-window 'right:60%:wrap' --margin=1,4"
 
 EOF
-    echo "OK"
 done
 
 append_line() {
@@ -111,8 +105,6 @@ append_line() {
     pat="${3:-}"
     lno=""
 
-    echo "Update $file:"
-    echo "  - $line"
     if [ -f "$file" ]; then
         if [ $# -lt 4 ]; then
             lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
@@ -120,23 +112,20 @@ append_line() {
             lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
         fi
     fi
-    if [ -n "$lno" ]; then
-        echo "    - Already exists: line #$lno"
-    else
+    if [ -z "$lno" ]; then
         [ -f "$file" ] && echo >> "$file"
         echo "$line" >> "$file"
-        echo "    + Added"
     fi
-    echo
     set +e
 }
 
 for shell in $shells; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+    append_line "[ -f ${__prefix}.${shell} ] && source ${__prefix}.${shell}" "$dest" "${__prefix}.${shell}"
 done
 
-echo 'Finished. Restart your shell or reload config file.'
+echo "custom-git successfully installed."
+echo "Restart your shell or reload config file."
 if [[ "$shells" =~ bash ]]; then
     echo -n '   source ~/.bashrc  # bash'
     [[ "$archi" =~ Darwin ]] && echo -n '  (.bashrc should be loaded from .bash_profile)'
