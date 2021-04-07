@@ -39,7 +39,7 @@ if [[ $(__is_fzf_installed) == false ]]; then
     __handle_fzf_installation
     if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
         printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
-        return
+        exit 1
     fi
     printf "\nNext:\n"
     echo "1. Restart your shell."
@@ -49,10 +49,7 @@ if [[ $(__is_fzf_installed) == false ]]; then
 fi
 
 FZF_WIDGET_TMUX=1
-if type rg &> /dev/null; then
-    export FZF_DEFAULT_COMMAND='rg --files'
-    export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window 'right:60%:wrap' --layout reverse --margin=1,4"
-fi
+export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window 'right:60%:wrap' --layout reverse --margin=1,4"
 
 function gadd() {
 

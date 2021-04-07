@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+
+#set -x
+
+__SUCCESS=0
+__FAILURE=1
+prefix='~/.custom-git'
+prefix_expand=~/.custom-git
+
+function __is_fzf_installed() {
+
+    if command -v fzf &>/dev/null; then
+        echo true
+    else
+        echo false
+    fi
+}
+
+function __handle_fzf_installation() {
+
+    printf "\ncustom-git requires fzf (fuzzy finder) to work.\nAllow me to install it on your system? (y/n) : "
+    read __continue
+    if [[ "$__continue" != "y" ]]; then
+        __fzf_installation_status=$__FAILURE
+        return
+    fi
+    echo
+
+    __curDir=$(pwd)
+
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
+    cd ~/.fzf/
+    ./install --all &> /dev/null
+
+    cd $__curDir
+}
+
+if [[ $(__is_fzf_installed) == false ]]; then
+    
+    __fzf_installation_status=$__SUCCESS
+    __handle_fzf_installation
+    if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
+        printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
+        exit 1
+    else
+        printf "fzf successfully installed.\n"
+    fi
+fi
+
+if [[ -d $prefix_expand ]]; then
+    echo "custom-git is already installed. Stopping installation."
+    exit 0
+fi
+
+git clone https://github.com/custom-git/custom-git-bash.git $prefix_expand &> /dev/null
+if [[ $? != $__SUCCESS ]]; then
+    echo "Some error occurred while fetching custom-git. Please check your network."
+    exit 1
+fi
+
+if [[ ! -d $prefix_expand ]]; then
+    echo "Couldn't create the directory $prefix. Stopping installation."
+    exit 1
+fi
+
+cd $prefix_expand
+custom_git_base=$(pwd)
+
+archi=$(uname -sm)
+shells="bash zsh"
+
+for s in $shells; do
+    if ! command -v "$s" > /dev/null; then
+        shells=${shells/$s/}
+    fi
+done
+
+if [[ ${#shells} -lt 3 ]]; then
+    echo "custom-git is only supported for bash and zsh shells. Stopping installation."
+    exit 1
+fi
+
+echo
+for shell in $shells; do
+    src=${prefix_expand}.${shell}
+    echo -n "Generate $src ..."
+
+    cat > "$src" << EOF
+# Setup custom-git
+# ----------------
+if [[ ! "\$PATH" == *$custom_git_base/cmd* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$custom_git_base/cmd"
+fi
+if [[ ! "\$PATH" == *$custom_git_base/util* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$custom_git_base/util"
+fi
+
+FZF_WIDGET_TMUX=1
+export FZF_DEFAULT_OPTS="--height 80% --layout reverse --border --ansi --preview-window 'right:60%:wrap' --margin=1,4"
+
+EOF
+    echo "OK"
+done
+
+append_line() {
+    set -e
+
+    local line file pat lno
+    line="$1"
+    file="$2"
+    pat="${3:-}"
+    lno=""
+
+    echo "Update $file:"
+    echo "  - $line"
+    if [ -f "$file" ]; then
+        if [ $# -lt 4 ]; then
+            lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        else
+            lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        fi
+    fi
+    if [ -n "$lno" ]; then
+        echo "    - Already exists: line #$lno"
+    else
+        [ -f "$file" ] && echo >> "$file"
+        echo "$line" >> "$file"
+        echo "    + Added"
+    fi
+    echo
+    set +e
+}
+
+for shell in $shells; do
+    [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
+    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+done
+
+echo 'Finished. Restart your shell or reload config file.'
+if [[ "$shells" =~ bash ]]; then
+    echo -n '   source ~/.bashrc  # bash'
+    [[ "$archi" =~ Darwin ]] && echo -n '  (.bashrc should be loaded from .bash_profile)'
+    echo
+fi
+[[ "$shells" =~ zsh ]]  && echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+echo
+echo 'Use uninstall script to remove custom-git.'
+echo 'For more information, see: https://github.com/custom-git'
