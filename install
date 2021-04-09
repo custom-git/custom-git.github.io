@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+#set -x
+
+archi=$(uname -sm)
+shells=("bash" "zsh")
+
+for ((i = 0 ; i < ${#shells[@]} ; i++)); do
+    shell=${shells[$i]}
+    if ! command -v "$shell" > /dev/null; then
+        unset shells[$i]
+    fi
+done
+
+if [[ ${#shells[@]} -eq 0 ]]; then
+    printf "\ncustom-git is only supported for bash and zsh shells. Stopping installation.\n"
+    exit 1
+fi
+
 __SUCCESS=0
 __FAILURE=1
 __prefix='~/.custom-git'
@@ -25,9 +42,12 @@ function __handle_fzf_installation() {
     fi
     echo
 
+    printf "Installing fzf ..."
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
     cd ~/.fzf/
     ./install --all &> /dev/null
+    printf "\rfzf successfully installed.\n"
+
     cd $__currDir
 }
 
@@ -36,48 +56,33 @@ if [[ $(__is_fzf_installed) == false ]]; then
     __fzf_installation_status=$__SUCCESS
     __handle_fzf_installation
     if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
-        printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
-        return
-    else
-        printf "fzf successfully installed.\n\n"
+        printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n"
+        exit 1
     fi
 fi
 
 if [[ -d $__prefix_expand ]]; then
-    echo "custom-git is already installed. Stopping installation."
-    return
+    printf "\ncustom-git is already installed. Stopping installation.\n"
+    exit 0
 fi
 
+printf "Installing custom-git ..."
 git clone https://github.com/custom-git/custom-git-bash.git $__prefix_expand &> /dev/null
 if [[ $? != $__SUCCESS ]]; then
-    echo "Some error occurred while fetching custom-git. Please check your network."
-    return
+    printf "\rSome error occurred while fetching custom-git. Please check your network.\n"
+    exit 1
 fi
 
 if [[ ! -d $__prefix_expand ]]; then
-    echo "Couldn't create the directory $__prefix. Stopping installation."
-    return
+    printf "\rCouldn't create the directory $__prefix. Stopping installation.\n"
+    exit 1
 fi
 
 cd $__prefix_expand
 custom_git_base=$(pwd)
 cd $__currDir
 
-archi=$(uname -sm)
-shells=("bash" "zsh")
-
-for s in "${shells[@]}"; do
-    if ! command -v "$s" > /dev/null; then
-        unset shells[$s]
-    fi
-done
-
-if [[ ${#shells[@]} -eq 0 ]]; then
-    echo "custom-git is only supported for bash and zsh shells. Stopping installation."
-    return
-fi
-
-for shell in $shells; do
+for shell in "${shells[@]}"; do
     src=${__prefix_expand}.${shell}
 
     cat > "$src" << EOF
@@ -119,19 +124,28 @@ append_line() {
     set +e
 }
 
-for shell in $shells; do
+for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
     append_line "[ -f ${__prefix}.${shell} ] && source ${__prefix}.${shell}" "$dest" "${__prefix}.${shell}"
 done
 
-echo "custom-git successfully installed."
-echo "Restart your shell or reload config file."
-if [[ "$shells" =~ bash ]]; then
-    echo -n '   source ~/.bashrc  # bash'
-    [[ "$archi" =~ Darwin ]] && echo -n '  (.bashrc should be loaded from .bash_profile)'
-    echo
-fi
-[[ "$shells" =~ zsh ]]  && echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
-echo
-echo 'Use uninstall script to remove custom-git.'
-echo 'For more information, see: https://github.com/custom-git'
+printf "\rcustom-git successfully installed.\n"
+printf "\nRestart your shell or reload config file.\n"
+
+for shell in "${shells[@]}"; do
+    case "$shell" in
+        bash)
+            printf "   source ~/.bashrc  # bash"
+            [[ "$archi" =~ Darwin ]] && echo "  (.bashrc should be loaded from .bash_profile)"
+            ;;
+        zsh)
+            echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+            ;;
+        *)
+            printf "\n$shell shell is not supported.\n\n"
+            ;;
+    esac
+done
+
+printf '\nUse uninstall script to remove custom-git.\n'
+echo 'For more information, see: https://github.com/custom-git/custom-git-bash'
