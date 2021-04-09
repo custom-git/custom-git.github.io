@@ -1,8 +1,6 @@
-# Welcome to custom-git
+An open source, general-purpose, highly efficient command line git tool.
 
-An open source, general-purpose, command line git tool for high productivity.
-
-## Installation
+### Installation
 
 Run this command in bash, zsh, or sh:
 
@@ -14,7 +12,7 @@ else
 fi
 ```
 
-## Try without installing
+### Try without installing
 
 Run this command in bash, zsh, or sh:
 
