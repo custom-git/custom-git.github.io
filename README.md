@@ -1,10 +1,34 @@
-## Welcome to custom-git
+# Welcome to custom-git
 
 An open source, general-purpose, command line git tool for high productivity.
 
-### Usage
+## Installation
 
-### gadd | \\ *j**ē**-add* \\
+Run this command in bash, zsh, or sh:
+
+```shell
+if command -v curl >/dev/null 2>&1; then
+    sh -c "$(curl -fsSL https://custom-git.io/install)"
+else
+    sh -c "$(wget -qO- https://custom-git.io/install)"
+fi
+```
+
+## Try without installing
+
+Run this command in bash, zsh, or sh:
+
+```shell
+if command -v curl >/dev/null 2>&1; then
+    source <(curl -fsSL https://custom-git.io/try)
+else
+    source <(wget -qO- https://custom-git.io/try)
+fi
+```
+
+## Usage
+
+### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
 A quick demo:
 <div>
@@ -12,7 +36,3 @@ A quick demo:
 </div>
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
