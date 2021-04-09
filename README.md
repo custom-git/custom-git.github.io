@@ -12,7 +12,7 @@ else
 fi
 ```
 
-### Try without installing
+### Try it without installing
 
 Run this command in bash, zsh, or sh:
 
