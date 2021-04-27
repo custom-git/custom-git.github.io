@@ -14,6 +14,8 @@ fi
 __SUCCESS=0
 __FAILURE=1
 
+__exec_status=$__SUCCESS
+
 function __is_fzf_installed() {
 
     if command -v fzf &>/dev/null; then
@@ -70,6 +72,9 @@ export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window
 function gadd() {
 
     __assertgitrepo
+    if [[ $__exec_status -eq $__FAILURE ]]; then
+        return
+    fi
 
     # check for command line arguments
     if [[ $# -gt 0 ]]; then
@@ -127,6 +132,9 @@ function __stage_untracked_files() {
 function gstatus() {
     
     __assertgitrepo
+    if [[ $__exec_status -eq $__FAILURE ]]; then
+        return
+    fi
 
     clear
     git status
@@ -147,7 +155,7 @@ function __assertgitrepo() {
 
     if [[ $(__isgitrepo) == false ]]; then
         echo "[ERROR] not a git repo."
-        return $__FAILURE
+        __exec_status=$__FAILURE
     fi
 }
 
