@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
+function __happy_exit_message() {
+    printf "\rcustom-git commands are enabled for this shell session.\n"
+    printf "Have fun ...\n\n"
+}
+
 if [[ -n "$_CUSTOM_GIT_TRY_" ]]; then
-    printf "\ncustom-git commands are enabled for this shell session. Have fun..\n\n"
+    echo
+    __happy_exit_message
     return
 fi
 
@@ -29,6 +35,7 @@ function __handle_fzf_installation() {
 
     __curDir=$(pwd)
 
+    printf "Installing fzf ..."
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
     cd ~/.fzf/
     ./install --all &> /dev/null
@@ -44,11 +51,18 @@ if [[ $(__is_fzf_installed) == false ]]; then
         printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
         return
     fi
-    printf "fzf installed successfully.\n\n"
+    printf "\rfzf installed successfully.\n\n"
     echo "Restart your shell and run the custom-git 'try' command again."
-    echo "  - source <(curl -fsS https://custom-git.io/try)"
+    printf "\n\
+    if command -v curl >/dev/null 2>&1; then\n\
+        source <(curl -fsSL https://custom-git.io/try)\n\
+    else\n\
+        source <(wget -qO- https://custom-git.io/try)\n\
+    fi\n"
     return
 fi
+
+printf "\nEnabling custom-git commands ..."
 
 FZF_WIDGET_TMUX=1
 export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window 'right:60%:wrap' --layout reverse --margin=1,4"
@@ -137,5 +151,5 @@ function __assertgitrepo() {
     fi
 }
 
+__happy_exit_message
 _CUSTOM_GIT_TRY_="enabled"
-printf "\ncustom-git commands are enabled for this shell session. Have fun..\n\n"
