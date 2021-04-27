@@ -154,7 +154,7 @@ function __isgitrepo() {
 function __assertgitrepo() {
 
     if [[ $(__isgitrepo) == false ]]; then
-        echo "[ERROR] not a git repo."
+        echo "[AssertionError] not a git repo."
         __exec_status=$__FAILURE
     fi
 }
