@@ -67,7 +67,7 @@ fi
 printf "\nEnabling custom-git commands ..."
 
 FZF_WIDGET_TMUX=1
-export FZF_DEFAULT_OPTS="--height 80% --reverse --border --ansi --preview-window 'right:60%:wrap' --layout reverse --margin=1,4"
+export FZF_DEFAULT_OPTS="--reverse --border rounded --height 80%"
 
 function gadd() {
 

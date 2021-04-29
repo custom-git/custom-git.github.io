@@ -96,7 +96,7 @@ if [[ ! "\$PATH" == *$custom_git_base/util* ]]; then
 fi
 
 FZF_WIDGET_TMUX=1
-export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
+export FZF_DEFAULT_OPTS="--reverse --border rounded --height 80%"
 
 EOF
 done
