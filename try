@@ -5,7 +5,7 @@ function __happy_exit_message() {
     printf "Have fun ...\n\n"
 }
 
-if [[ -n "$_CUSTOM_GIT_TRY_" ]]; then
+if [[ -n "$__CUSTOM_GIT_TRY_ENABLED__" ]]; then
     echo
     __happy_exit_message
     return
@@ -76,7 +76,6 @@ function gadd() {
         return
     fi
 
-    # check for command line arguments
     if [[ $# -gt 0 ]]; then
         # use command line arguments
         git add $*
@@ -90,43 +89,35 @@ function gadd() {
 
 function __stage_modified_files() {
 
-    numModified=$(git diff --name-only | wc -l)
-    if [[ $numModified -eq 0 ]]; then
+    numModifiedFiles=$(git status --short | grep "^[ ]" -c)
+    if [[ $numModifiedFiles -eq 0 ]]; then
         return
     fi
     gstatus
     printf "\nstage modified files? (press enter / n) : "
-    read __continue
-    if [[ $__continue == "n" ]]; then
+    read -r REPLY
+    if [[ $REPLY != "" ]]; then
         return
     fi
-
-    git diff --name-only | sed 's/\* //g' | fzf -m --color fg:160 | \
-        while read -r __file; do
-            __file=$(echo "$__file" | xargs -I '{}' echo '{}')
-            git add "$__file"
-        done
+    git status --short | grep "^[ ]" | sed -e 's/ [A-Z] //' | \
+        fzf -m --color='fg:9' | xargs git add
 }
 
 
 function __stage_untracked_files() {
 
-    numUntracked=$(git status --porcelain | grep "^?? " | wc -l)
-    if [[ $numUntracked -eq 0 ]]; then
+    numUntrackedFiles=$(git status --short | grep "^??" -c)
+    if [[ $numUntrackedFiles -eq 0 ]]; then
         return
     fi
     gstatus
     printf "\nstage untracked files? (press enter / n) : "
-    read __continue
-    if [[ $__continue == "n" ]]; then
+    read -r REPLY
+    if [[ $REPLY != "" ]]; then
         return
     fi
-
-    git status --porcelain | grep "^?? " | sed -e 's/^[?]* //' | fzf -m --color fg:160 | \
-        while read -r __file; do
-            __file=$(echo "$__file" | xargs -I '{}' echo '{}')
-            git add "$__file"
-        done
+    git status --short | grep "^??" | sed -e 's/^[?]* //' | \
+        fzf -m --color='fg:9' | xargs git add
 }
 
 function gstatus() {
@@ -160,4 +151,4 @@ function __assertgitrepo() {
 }
 
 __happy_exit_message
-_CUSTOM_GIT_TRY_="enabled"
+__CUSTOM_GIT_TRY_ENABLED__="true"

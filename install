@@ -147,4 +147,5 @@ for shell in "${shells[@]}"; do
     esac
 done
 
+echo
 echo 'For more information, see: https://github.com/custom-git/custom-git-bash'
