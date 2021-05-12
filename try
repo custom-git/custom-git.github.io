@@ -2,7 +2,7 @@
 
 function __happy_exit_message() {
     printf "\rcustom-git commands are enabled for this shell session.\n"
-    printf "Have fun ...\n\n"
+    printf "Have fun...\n\n"
 }
 
 if [[ -n "$__CUSTOM_GIT_TRY_ENABLED__" ]]; then
@@ -67,7 +67,7 @@ fi
 printf "\nEnabling custom-git commands ..."
 
 FZF_WIDGET_TMUX=1
-export FZF_DEFAULT_OPTS="--reverse --border rounded --height 80%"
+export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
 
 function gadd() {
 
@@ -76,48 +76,24 @@ function gadd() {
         return
     fi
 
+    # use command line arguments if provided
     if [[ $# -gt 0 ]]; then
-        # use command line arguments
-        git add $*
-    else
-        __stage_modified_files
-        __stage_untracked_files
+        [[ "$1" == "." ]] && git add -A || git add $*
+        gstatus
+        return
     fi
+
+    numUnstagedFiles=$(git status --short | grep "^[ ?]" -c)
+
+    if [[ $numUnstagedFiles -eq 0 ]]; then
+        gstatus
+        printf "\n[INFO] No unstaged files.\n"
+        return
+    fi
+
+    git status --short | grep "^[ ?]" | fzf -m --color 'fg:160' | sed -e 's/...//' | xargs git add
 
     gstatus
-}
-
-function __stage_modified_files() {
-
-    numModifiedFiles=$(git status --short | grep "^[ ]" -c)
-    if [[ $numModifiedFiles -eq 0 ]]; then
-        return
-    fi
-    gstatus
-    printf "\nstage modified files? (press enter / n) : "
-    read -r REPLY
-    if [[ $REPLY != "" ]]; then
-        return
-    fi
-    git status --short | grep "^[ ]" | sed -e 's/ [A-Z] //' | \
-        fzf -m --color='fg:9' | xargs git add
-}
-
-
-function __stage_untracked_files() {
-
-    numUntrackedFiles=$(git status --short | grep "^??" -c)
-    if [[ $numUntrackedFiles -eq 0 ]]; then
-        return
-    fi
-    gstatus
-    printf "\nstage untracked files? (press enter / n) : "
-    read -r REPLY
-    if [[ $REPLY != "" ]]; then
-        return
-    fi
-    git status --short | grep "^??" | sed -e 's/^[?]* //' | \
-        fzf -m --color='fg:9' | xargs git add
 }
 
 function gstatus() {
