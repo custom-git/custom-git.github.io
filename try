@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 
-function __happy_exit_message() {
+function __CG_print_enabled_message() {
     printf "\rcustom-git commands are enabled for this shell session.\n"
     printf "Have fun...\n\n"
 }
 
-if [[ -n "$__CUSTOM_GIT_TRY_ENABLED__" ]]; then
+__CG_SUCCESS=0
+__CG_FAILURE=1
+
+function __CG_try_reset() {
+    __CG_EXEC_STATUS=$__CG_SUCCESS
+}
+
+if [[ -n "$__CG_TRY_ENABLED__" ]]; then
     echo
-    __happy_exit_message
+    __CG_print_enabled_message
     return
 fi
 
-__SUCCESS=0
-__FAILURE=1
+__CG_EXEC_STATUS=$__CG_SUCCESS
 
-__exec_status=$__SUCCESS
-
-function __is_fzf_installed() {
+function __CG_is_fzf_installed() {
 
     if command -v fzf &>/dev/null; then
         echo true
@@ -25,32 +29,33 @@ function __is_fzf_installed() {
     fi
 }
 
-function __handle_fzf_installation() {
+function __CG_handle_fzf_installation() {
 
     printf "\ncustom-git requires fzf (fuzzy finder) to work.\nAllow me to install it on your system? (y/n) : "
-    read __continue
-    if [[ "$__continue" != "y" ]]; then
-        __fzf_installation_status=$__FAILURE
+    read -r
+    if [[ "$REPLY" != "y" ]]; then
+        __CG_fzf_installation_status=$__CG_FAILURE
         return
     fi
     echo
 
-    __curDir=$(pwd)
+    __CG_curr_dir=$(pwd)
 
     printf "Installing fzf ..."
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
     cd ~/.fzf/
     ./install --all &> /dev/null
 
-    cd $__curDir
+    cd $__CG_curr_dir
 }
 
-if [[ $(__is_fzf_installed) == false ]]; then
+if [[ $(__CG_is_fzf_installed) == false ]]; then
     
-    __fzf_installation_status=$__SUCCESS
-    __handle_fzf_installation
-    if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
+    __CG_fzf_installation_status=$__CG_SUCCESS
+    __CG_handle_fzf_installation
+    if [[ $__CG_fzf_installation_status -eq $__CG_FAILURE ]]; then
         printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n\n"
+        __CG_try_reset
         return
     fi
     printf "\rfzf installed successfully.\n\n"
@@ -61,18 +66,21 @@ if [[ $(__is_fzf_installed) == false ]]; then
     else\n\
         source <(wget -qO- https://custom-git.io/try)\n\
     fi\n"
+    __CG_try_reset
     return
 fi
 
 printf "\nEnabling custom-git commands ..."
 
-FZF_WIDGET_TMUX=1
+export FZF_WIDGET_TMUX=1
 export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
 
 function gadd() {
 
-    __assertgitrepo
-    if [[ $__exec_status -eq $__FAILURE ]]; then
+    __CG_assertgitrepo
+    if [[ $__CG_EXEC_STATUS -eq $__CG_FAILURE ]]; then
+        echo "[AssertionError] not a git repo."
+        __CG_try_reset
         return
     fi
 
@@ -98,8 +106,10 @@ function gadd() {
 
 function gstatus() {
     
-    __assertgitrepo
-    if [[ $__exec_status -eq $__FAILURE ]]; then
+    __CG_assertgitrepo
+    if [[ $__CG_EXEC_STATUS -eq $__CG_FAILURE ]]; then
+        echo "[AssertionError] not a git repo."
+        __CG_try_reset
         return
     fi
 
@@ -108,7 +118,7 @@ function gstatus() {
 }
 
 # util
-function __isgitrepo() {
+function __CG_isgitrepo() {
 
     if git rev-parse --git-dir > /dev/null 2>&1; then
         # This is a valid git repository.
@@ -118,13 +128,14 @@ function __isgitrepo() {
     fi
 }
 
-function __assertgitrepo() {
+function __CG_assertgitrepo() {
 
-    if [[ $(__isgitrepo) == false ]]; then
-        echo "[AssertionError] not a git repo."
-        __exec_status=$__FAILURE
+    if [[ $(__CG_isgitrepo) == false ]]; then
+        __CG_EXEC_STATUS=$__CG_FAILURE
+        return
     fi
 }
 
-__happy_exit_message
-__CUSTOM_GIT_TRY_ENABLED__="true"
+__CG_try_reset
+__CG_print_enabled_message
+__CG_TRY_ENABLED__="true"
