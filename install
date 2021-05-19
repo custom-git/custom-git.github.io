@@ -95,7 +95,7 @@ if [[ ! "\$PATH" == *$custom_git_base/util* ]]; then
     export PATH="\${PATH:+\${PATH}:}$custom_git_base/util"
 fi
 
-FZF_WIDGET_TMUX=1
+export FZF_WIDGET_TMUX=1
 export FZF_DEFAULT_OPTS="--reverse --border rounded --height 80%"
 
 EOF
@@ -136,7 +136,7 @@ for shell in "${shells[@]}"; do
     case "$shell" in
         bash)
             printf "   source ~/.bashrc  # bash"
-            [[ "$archi" =~ Darwin ]] && echo "  (.bashrc should be loaded from .bash_profile)"
+            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
             ;;
         zsh)
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
