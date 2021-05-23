@@ -51,6 +51,7 @@ fi
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
 A quick demo:
+
 https://user-images.githubusercontent.com/17147510/119265111-2fee4400-bc03-11eb-8f81-8b34d513b2c0.mp4
 
 
