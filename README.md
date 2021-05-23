@@ -52,7 +52,7 @@ fi
 `gadd` is a customized version of `git add` command.
 A quick demo:
 
-https://user-images.githubusercontent.com/17147510/119265111-2fee4400-bc03-11eb-8f81-8b34d513b2c0.mp4
+<iframe width="560" height="315" src="https://www.youtube.com/embed/StaPAVXnAm0?start=165" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
