@@ -1,10 +1,8 @@
 An open source, general-purpose, highly efficient command line git tool.
 
 ### Note for Windows users
-`custom-git` works only with the `Git for Windows` executable.
+`custom-git` works only with the `Git for Windows` executable.<br>
 Download link: https://git-scm.com/download/win
-
-<br>
 
 ### Installation
 
@@ -17,8 +15,6 @@ else
     sh -c "$(wget -qO- https://custom-git.io/install)"
 fi
 ```
-
-<br>
 
 ### Try it without installation
 
@@ -37,24 +33,22 @@ fi
 <br>
 
 ### FAQs
-`Q.` Not working properly in bash shell on MacOS.
-`A.` Make sure ~/.bashrc file is sourced in ~/.bash_profile. 
-     If not, add the following line at the end of ~/.bash_profile file.
+`Q.` Not working properly in bash shell on MacOS.<br>
+`A.` Make sure ~/.bashrc file is sourced in ~/.bash_profile.<br>
+     If not, add the following line at the end of ~/.bash_profile file.<br>
          source ~/.bashrc
 
-`Q` What to do if something doesn't work?
-`A.` Restart your shell session and try again.
+`Q` What to do if something doesn't work?<br>
+`A.` Restart your shell session and try again.<br>
      Reason: network issues may occur while fetching the try or install scripts from the website.
 
-`Q.` What to do if the issue still persists?
-`A.` Please paste it in the comment section.
+`Q.` What to do if the issue still persists?<br>
+`A.` Please paste it in the comment section.<br>
      You can also forward your queries to connect@bhavidhingra.dev.
 
 <br>
 
 ## Usage
-
-<br>
 
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
