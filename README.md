@@ -46,7 +46,7 @@ fi
 
 <br>
 
-## Usage
+## Demos
 
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
