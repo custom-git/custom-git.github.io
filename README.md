@@ -18,9 +18,11 @@ Run this command in bash, zsh, or sh:
 
 ```shell
 if command -v curl >/dev/null 2>&1; then
-    source <(curl -fsSL https://custom-git.io/try)
+    curl -fsSL -o ~/.custom-git.try https://custom-git.io/try
+    source ~/.custom-git.try
 else
-    source <(wget -qO- https://custom-git.io/try)
+    wget -q -O ~/.custom-git.try https://custom-git.io/try
+    source ~/.custom-git.try
 fi
 ```
 

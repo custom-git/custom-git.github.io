@@ -62,9 +62,11 @@ if [[ $(__CG_is_fzf_installed) == false ]]; then
     echo "Restart your shell and run the custom-git 'try' command again."
     printf "\n\
     if command -v curl >/dev/null 2>&1; then\n\
-        source <(curl -fsSL https://custom-git.io/try)\n\
+        curl -fsSL -o ~/.custom-git.try https://custom-git.io/try\n\
+        source ~/.custom-git.try\n\
     else\n\
-        source <(wget -qO- https://custom-git.io/try)\n\
+        wget -q -O ~/.custom-git.try https://custom-git.io/try\n\
+        source ~/.custom-git.try\n\
     fi\n"
     __CG_try_reset
     return
@@ -84,6 +86,13 @@ function gadd() {
         return
     fi
 
+    numUnstagedFiles=$(git status --short | grep "^[ ?]" -c)
+    if [[ $numUnstagedFiles -eq 0 ]]; then
+        gstatus
+        printf "\n[INFO] No unstaged files.\n"
+        return
+    fi
+
     # use command line arguments if provided
     if [[ $# -gt 0 ]]; then
         [[ "$1" == "." ]] && git add -A || git add $*
@@ -91,16 +100,7 @@ function gadd() {
         return
     fi
 
-    numUnstagedFiles=$(git status --short | grep "^[ ?]" -c)
-
-    if [[ $numUnstagedFiles -eq 0 ]]; then
-        gstatus
-        printf "\n[INFO] No unstaged files.\n"
-        return
-    fi
-
     git status --short | grep "^[ ?]" | fzf -m --color 'fg:160' | sed -e 's/...//' | xargs git add
-
     gstatus
 }
 
