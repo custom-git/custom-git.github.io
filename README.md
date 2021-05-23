@@ -33,8 +33,8 @@ fi
 
 ### FAQs
 `Q.` Not working properly in bash shell on MacOS.<br>
-`A.` Make sure ~/.bashrc file is sourced in ~/.bash_profile.
-         If not, add the following line at the end of ~/.bash_profile file.
+`A.` Make sure ~/.bashrc file is sourced in ~/.bash_profile.<br>
+         If not, add the following line at the end of ~/.bash_profile file.<br>
                  source ~/.bashrc
 
 `Q.` What to do if something doesn't work?<br>
