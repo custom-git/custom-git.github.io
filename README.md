@@ -42,7 +42,7 @@ fi
          Reason: network issues may occur while fetching the try or install scripts from the website.
 
 `Q.` What to do if the issue still persists?<br>
-`A.` Forward your queries to connect@bhavidhingra.dev.
+`A.` Forward your queries to [connect@bhavidhingra.dev](mailto:connect@bhavidhingra.dev).
 
 <br>
 
