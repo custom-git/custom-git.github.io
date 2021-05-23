@@ -81,7 +81,7 @@ function gadd() {
 
     __CG_assertgitrepo
     if [[ $__CG_EXEC_STATUS -eq $__CG_FAILURE ]]; then
-        echo "[AssertionError] not a git repo."
+        echo "[AssertionError] should be a git repo."
         __CG_try_reset
         return
     fi
