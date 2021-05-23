@@ -1,7 +1,7 @@
 title: custom-git
 description: An open source, general-purpose, highly efficient command line git tool.
 show_downloads: false
-google_analytics: G-ZTWKKERPZW
+google_analytics: UA-184167407-3
 theme: jekyll-theme-leap-day
 github:
   repository_url: https://github.com/custom-git/custom-git-bash
