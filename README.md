@@ -51,8 +51,8 @@ fi
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
 A quick demo:
-<div>
-    <script id="asciicast-g3BNw6dsZpYqNH8bj0SF6U2pZ" src="https://asciinema.org/a/g3BNw6dsZpYqNH8bj0SF6U2pZ.js" data-cols="175" data-rows="35"></script>
-</div>
+
+https://user-images.githubusercontent.com/17147510/119265041-ebfb3f00-bc02-11eb-8ae0-3e4e18c5acfc.mp4
+
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
