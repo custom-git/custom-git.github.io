@@ -1,5 +1,9 @@
 An open source, general-purpose, highly efficient command line git tool.
 
+### YouTube
+Catch all the action at the [custom-git YouTube Channel](https://www.youtube.com/channel/UC_pNb_w0nc_mnfBOUtCmhQQ)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RBhLj4Qomfk?controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0" title="custom-git YouTube teaser" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ### Note for Windows users
 `custom-git` works only with the [Git for Windows](https://git-scm.com/download/win) executable.<br>
 
