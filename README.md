@@ -50,8 +50,41 @@ fi
 
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
+<script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        width: '560',
+        height: '315',
+        videoId: 'StaPAVXnAm0',
+        
+        events: {
+          'onReady': onPlayerReady,
+            'onStateChange': function(event){
+                switch(event.data){
+                    // Stop the video once video ends, it prevent Suggestions/Recommended video to pop up.
+                    case 0:     // when video ends
+                    player.stopVideo();
+                    break;
+                    default:
+                    break;
+                }
+            }
+      }
+      });
+    }
+    
+    function onPlayerReady(event) {
+      event.target.pauseVideo();
+    }
+</script> 
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/StaPAVXnAm0?start=166&end=186&controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/StaPAVXnAm0?start=166&end=186&controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe> -->
 
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
