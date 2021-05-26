@@ -59,5 +59,5 @@ fi
 
 
 ### Contact Us
-Get Support : support@custom-git.io <br>
-Say Hello : hello@bhavidhingra.dev
+Get Support : [support@custom-git.io](mailto:support@custom-git.io) <br>
+Say Hello : [hello@bhavidhingra.dev](mailto:hello@bhavidhingra.dev)
