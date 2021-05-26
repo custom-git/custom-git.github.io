@@ -46,7 +46,7 @@ fi
          Reason: network issues may occur while fetching the try or install scripts from the website.
 
 `Q.` What to do if the issue still persists?<br>
-`A.` Forward your queries to [connect@bhavidhingra.dev](mailto:connect@bhavidhingra.dev).
+`A.` Forward your queries to [support@custom-git.io](mailto:support@custom-git.io).
 
 <br>
 
@@ -58,4 +58,6 @@ fi
 <iframe width="600" height="337.5" src="https://user-images.githubusercontent.com/17147510/119266909-421fb080-bc0a-11eb-920d-9d08f77e9a77.mp4" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+### Contact Us
+Get Support : support@custom-git.io <br>
+Say Hello : hello@bhavidhingra.dev
