@@ -1,8 +1,8 @@
 An open source, general-purpose, highly efficient command line git tool.
 
 ### YouTube
-Catch all the action at the [custom-git YouTube Channel](https://www.youtube.com/channel/UC_pNb_w0nc_mnfBOUtCmhQQ)
-<iframe width="560" height="315" src="https://www.youtube.com/embed/RBhLj4Qomfk?controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0" title="custom-git YouTube teaser" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+Visit the [custom-git YouTube Channel](https://www.youtube.com/channel/UC_pNb_w0nc_mnfBOUtCmhQQ) for videos of hands-on implementation of the custom-git commands.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RBhLj4Qomfk?controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0&fs=1&iv_load_policy=3&widget_referrer=https://custom-git.io" title="custom-git YouTube teaser" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ### Note for Windows users
 `custom-git` works only with the [Git for Windows](https://git-scm.com/download/win) executable.<br>
@@ -55,7 +55,7 @@ fi
 ### gadd \\ *j**ē**-add* \\
 `gadd` is a customized version of `git add` command.
 
-<iframe width="600" height="337.5" src="https://www.youtube.com/embed/StaPAVXnAm0?start=166&end=186&controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="600" height="337.5" src="https://www.youtube.com/embed/StaPAVXnAm0?start=166&end=186&controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0&fs=1&iv_load_policy=3&widget_referrer=https://custom-git.io" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <br><br>
 ### Contact Us
