@@ -13,9 +13,9 @@ Run this command in bash or zsh shells.
 
 ```shell
 if command -v curl >/dev/null 2>&1; then
-    sh -c "$(curl -fsSL https://custom-git.io/install)"
+    $SHELL -c "$(curl -fsSL https://custom-git.io/install)"
 else
-    sh -c "$(wget -qO- https://custom-git.io/install)"
+    $SHELL -c "$(wget -qO- https://custom-git.io/install)"
 fi
 ```
 
