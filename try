@@ -144,7 +144,7 @@ function __CG_stage_selected_files() {
             local file="${item#${item:0:2}}"    # remove prefix of length 2
         fi
         local rawFile="$(getrawstr "${file}")"
-        git add "$(__trim_escaped_quotes "${rawFile}")"
+        git add "$(__CG_trim_escaped_quotes "${rawFile}")"
     done
 }
 
