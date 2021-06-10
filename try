@@ -12,9 +12,15 @@ function __CG_try_reset() {
     __CG_EXEC_STATUS=$__CG_SUCCESS
 }
 
-if [[ -n "$__CG_TRY_ENABLED__" ]]; then
-    echo
+function __CG_try_success_exit() {
     __CG_print_enabled_message
+    __CG_TRY_ENABLED__="true"
+    [ -f ~/.custom-git.try ] && rm ~/.custom-git.try
+}
+
+if [[ -n "${__CG_TRY_ENABLED__}" ]]; then
+    echo
+    __CG_try_success_exit
     return
 fi
 
@@ -86,7 +92,7 @@ function gadd() {
         return
     fi
 
-    numUnstagedFiles=$(git status --short | grep "^[ ?]" -c)
+    numUnstagedFiles=$(git status --short | grep "^.[A-Z?] " -c)
     if [[ $numUnstagedFiles -eq 0 ]]; then
         gstatus
         printf "\n[INFO] No unstaged files.\n"
@@ -100,7 +106,8 @@ function gadd() {
         return
     fi
 
-    git status --short | grep "^[ ?]" | fzf -m --color 'fg:160' | sed -e 's/...//' | xargs git add
+    git status --short | grep "^.[A-Z?] " | fzf -m --color 'fg:160' | __CG_stage_selected_files
+    #git status --short | grep "^[ ?]" | fzf -m --color 'fg:160' | sed -e 's/...//' | xargs git add
     gstatus
 }
 
@@ -108,7 +115,7 @@ function gstatus() {
     
     __CG_assertgitrepo
     if [[ $__CG_EXEC_STATUS -eq $__CG_FAILURE ]]; then
-        echo "[AssertionError] not a git repo."
+        echo "[AssertionError] should be a git repo."
         __CG_try_reset
         return
     fi
@@ -117,7 +124,30 @@ function gstatus() {
     git status
 }
 
+function getrawstr() {
+    printf "%q" "${1}"
+}
+
 # util
+function __CG_trim_escaped_quotes() {
+    str="${1}"
+    str=${str/%\\\"/}   # replace suffix
+    str=${str/#\\\"/}   # replace prefix
+    echo "${str}"
+}
+
+function __CG_stage_selected_files() {
+    while read -r item; do
+        if [[ "${item:0:1}" == "?" ]]; then
+            local file="${item#${item:0:3}}"    # remove prefix of length 3
+        else
+            local file="${item#${item:0:2}}"    # remove prefix of length 2
+        fi
+        local rawFile="$(getrawstr "${file}")"
+        git add "$(__trim_escaped_quotes "${rawFile}")"
+    done
+}
+
 function __CG_isgitrepo() {
 
     if git rev-parse --git-dir > /dev/null 2>&1; then
@@ -137,5 +167,4 @@ function __CG_assertgitrepo() {
 }
 
 __CG_try_reset
-__CG_print_enabled_message
-__CG_TRY_ENABLED__="true"
+__CG_try_success_exit
