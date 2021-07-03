@@ -12,7 +12,7 @@ Visit the [custom-git YouTube Channel](https://www.youtube.com/channel/UC_pNb_w0
 Run this command in bash or zsh shells.
 
 ```shell
-if command -v curl >/dev/null 2>&1; then
+if command -v curl &>/dev/null; then
     $SHELL -c "$(curl -fsSL https://custom-git.io/install)"
 else
     $SHELL -c "$(wget -qO- https://custom-git.io/install)"
@@ -24,7 +24,7 @@ fi
 Run this command in bash or zsh shells:
 
 ```shell
-if command -v curl >/dev/null 2>&1; then
+if command -v curl &>/dev/null; then
     curl -fsSL -o ~/.custom-git.try https://custom-git.io/try
     source ~/.custom-git.try
 else
