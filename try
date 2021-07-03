@@ -12,6 +12,8 @@
 # util functions #
 ##################
 
+[ -f "$HOME"/.custom-git.try ] && rm "$HOME"/.custom-git.try
+
 __CG_MOVE_UP=$(tput cuu 1)
 __CG_CLEAR_LINE=$(tput el 1)
 alias __CG_MUCL='echo ${__CG_MOVE_UP}${__CG_CLEAR_LINE}${__CG_MOVE_UP}'
@@ -182,6 +184,8 @@ fi
 function __cg_install_fzf() {
 
     __cg_print_info 1 "Installing fzf ..." 1
+
+    __cg_fzf_installation_status=$__CG_SUCCESS
     git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME"/.fzf &> /dev/null
     cd "$HOME"/.fzf || {
         __cg_fzf_installation_status=$__CG_FAILURE
@@ -224,7 +228,6 @@ if ! $(__cg_is_command_installed "fzf"); then
         return
     fi
 
-    __cg_fzf_installation_status=$__CG_SUCCESS
     __cg_install_fzf
     if [[ $__cg_fzf_installation_status -eq $__CG_FAILURE ]]; then
         __cg_print_info 0 "Please install fzf from " 0
@@ -298,6 +301,6 @@ export FZF_DEFAULT_OPTS="--reverse --border --ansi --preview-window wrap:down:70
 export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS} --color='preview-fg:-1'"
 
 __CG_MUCL
-__cg_banner_color 0 "magenta" "*" "All the custom-git commands are enabled for this shell session. Current installation won't be affected." 2
+__cg_banner_color 0 "magenta" "*" "All the custom-git commands are enabled for this shell session. Existing installation won't be affected." 2
 __cg_print_info 0 "For more details, visit: " 0
 __cg_print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
