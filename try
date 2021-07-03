@@ -145,7 +145,7 @@ function __cg_install_clipboard() {
         return
     fi
     __cg_print_info 1 "Installing clipboard-cli ..." 1
-    npm install --global clipboard-cli &> /dev/null
+    sudo npm install -g clipboard-cli &> /dev/null
 
     if (( $? != __CG_SUCCESS )); then
         __cg_clipboard_installation_status=$__CG_FAILURE
