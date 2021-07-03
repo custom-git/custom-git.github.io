@@ -149,7 +149,7 @@ function __cg_install_clipboard() {
 
     if (( $? != __CG_SUCCESS )); then
         __cg_clipboard_installation_status=$__CG_FAILURE
-        __MUCL
+        __CG_MUCL
         __cg_banner_color_err 0 "clipboard-cli installation failed." 2
         return
     fi
@@ -185,7 +185,7 @@ function __cg_install_fzf() {
     git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME"/.fzf &> /dev/null
     cd "$HOME"/.fzf || {
         __cg_fzf_installation_status=$__CG_FAILURE
-        __MUCL
+        __CG_MUCL
         __cg_banner_color_err 0 "couldn't enter directory: $HOME/.fzf" 2
         return
     }
@@ -193,7 +193,7 @@ function __cg_install_fzf() {
 
     if (( $? != __CG_SUCCESS )); then
         __cg_fzf_installation_status=$__CG_FAILURE
-        __MUCL
+        __CG_MUCL
         __cg_banner_color_err 0 "fzf installation failed." 2
         return
     fi
