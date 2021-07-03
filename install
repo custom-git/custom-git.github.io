@@ -67,7 +67,7 @@ if [[ -d $__prefix_expand ]]; then
 fi
 
 printf "\nInstalling custom-git ..."
-git clone https://github.com/custom-git/custom-git-bash.git $__prefix_expand &> /dev/null
+git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git $__prefix_expand &> /dev/null
 if [[ $? != $__SUCCESS ]]; then
     printf "\rSome error occurred while fetching custom-git. Please check your network.\n"
     exit 1
