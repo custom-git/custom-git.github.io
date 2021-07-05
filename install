@@ -1,110 +1,201 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-#set -x
+#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded.
+#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME.
+#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching.
+#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
+#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
 
-archi=$(uname -sm)
-shells=("bash" "zsh")
+##################
+# util functions #
+##################
 
-for ((i = 0 ; i < ${#shells[@]} ; i++)); do
-    shell=${shells[$i]}
-    if ! command -v "$shell" > /dev/null; then
-        unset shells[$i]
-    fi
-done
+SUCCESS=0
+FAILURE=1
 
-if [[ ${#shells[@]} -eq 0 ]]; then
-    printf "\ncustom-git is only supported for bash and zsh shells. Stopping installation.\n"
-    exit 1
-fi
+MOVE_UP=$(tput cuu 1)
+CLEAR_LINE=$(tput el 1)
 
-__SUCCESS=0
-__FAILURE=1
-__prefix='~/.custom-git'
-__prefix_expand=~/.custom-git
-__currDir=$(pwd)
+function mucl() {
+    echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+}
 
-function __is_fzf_installed() {
+function apply_tput() {
 
-    if command -v fzf &>/dev/null; then
+    case "${1}" in
+        black) tput setaf 0
+        ;;
+        red) tput setaf 1
+        ;;
+        green) tput setaf 2
+        ;;
+        yellow) tput setaf 3
+        ;;
+        blue) tput setaf 4
+        ;;
+        magenta) tput setaf 5
+        ;;
+        cyan) tput setaf 6
+        ;;
+        white) tput setaf 7
+        ;;
+        reset) tput sgr0
+        ;;
+        *) tput "${1}"
+        ;;
+    esac
+}
+
+# Usage: insert_new_lines 3
+function insert_new_lines() {
+    for (( i = 0; i < ${1}; i++)); do
+        echo
+    done
+}
+
+# Usage: banner_color 1 "red" "*" "my title" 2
+function banner_color() {
+    insert_new_lines ${1}
+
+    apply_tput "${2}"
+    apply_tput bold
+
+    local msg="${3} ${4} ${3}"
+    local edge
+    edge=${msg//?/$3}
+    echo "${edge}"
+    echo "${msg}"
+    printf "%s" "${edge}"
+
+    apply_tput reset
+
+    insert_new_lines ${5}
+}
+
+# Usage: banner_color_err 1 "error msg" 2
+function banner_color_err() {
+    banner_color ${1} "red" "~" "[ERROR] ${2}" ${3}
+}
+
+# Usage: print_as 3 "blue" "msg" 1
+function print_as() {
+    insert_new_lines ${1}; shift
+
+	while [[ $# -gt 2 ]]; do
+		apply_tput "${1}"; shift
+	done
+	local msg="${1}"; shift
+	printf "%s" "${msg}"
+	apply_tput reset
+
+    insert_new_lines ${1};
+}
+
+# Usage: print_info 3 "msg" 2
+function print_info() {
+	print_as ${1} "blue" "[INFO] ${2}" ${3}
+}
+
+# Usage: print_err 3 "msg" 2
+function print_err() {
+	print_as ${1} "red" "[ERROR] ${2}" ${3}
+}
+
+function is_command_installed() {
+
+    if command -v "${1}" &>/dev/null; then
         echo true
     else
         echo false
     fi
 }
 
-function __handle_fzf_installation() {
+#####################
+# Enable custom-git #
+#####################
 
-    printf "\ncustom-git requires fzf (fuzzy finder) to work.\nAllow me to install it on your system? (y/n) : "
-    read __continue
-    if [[ "$__continue" != "y" ]]; then
-        __fzf_installation_status=$__FAILURE
+insert_new_lines 1
+
+archi=$(uname -sm)
+shells=("bash" "zsh" "fish")
+
+for ((i = 0 ; i < ${#shells[@]} ; i++)); do
+    shell="${shells[$i]}"
+    if ! $(is_command_installed "${shell}"); then
+        unset shells[$i]
+    fi
+done
+
+if [[ ${#shells[@]} -eq 0 ]]; then
+    print_err 0 "custom-git is only supported for bash and zsh shells. Stopping installation." 2
+    exit $FAILURE
+fi
+
+prefix='~/.custom-git'
+currDir="$(pwd)"
+
+CUSTOM_GIT_HOME="$HOME"/.custom-git
+CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
+
+function install_fzf() {
+
+    print_info 0 "Installing fzf ..." 1
+
+    fzf_installation_status=$SUCCESS
+    git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME"/.fzf &> /dev/null
+    cd "$HOME"/.fzf || {
+        fzf_installation_status=$FAILURE
+        mucl
+        banner_color_err 0 "couldn't enter directory: $HOME/.fzf" 2
+        return
+    }
+    ./install --all &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        fzf_installation_status=$FAILURE
+        mucl
+        banner_color_err 0 "fzf installation failed." 2
         return
     fi
-    echo
 
-    printf "Installing fzf ..."
-    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf &> /dev/null
-    cd ~/.fzf/
-    ./install --all &> /dev/null
-    printf "\rfzf successfully installed.\n"
+    mucl
+    banner_color 0 "magenta" "*" "fzf installed." 2
 
-    cd $__currDir
+    cd "$currDir" || {
+        banner_color_err 0 "couldn't enter directory: $currDir" 2
+        return
+    }
 }
 
-if [[ $(__is_fzf_installed) == false ]]; then
-    
-    __fzf_installation_status=$__SUCCESS
-    __handle_fzf_installation
-    if [[ $__fzf_installation_status -eq $__FAILURE ]]; then
-        printf "\nPlease install fzf from \"https://github.com/junegunn/fzf#installation\"\nand try again...\n"
-        exit 1
+if ! $(is_command_installed "fzf"); then
+
+    install_fzf
+    if [[ $fzf_installation_status -eq $FAILURE ]]; then
+        print_info 0 "Please install fzf from " 0
+        print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
+        print_as 0 "blue" "and try again..." 2
+        exit $FAILURE
     fi
 fi
 
-if [[ -d $__prefix_expand ]]; then
-    printf "\ncustom-git is already installed on your system.\n"
-    exit 0
+if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
+    print_info 0 "custom-git is already installed on your system." 2
+    exit $SUCCESS
 fi
 
-printf "\nInstalling custom-git ..."
-git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git $__prefix_expand &> /dev/null
-if [[ $? != $__SUCCESS ]]; then
-    printf "\rSome error occurred while fetching custom-git. Please check your network.\n"
-    exit 1
+print_info 0 "Installing custom-git..." 1
+git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+if (( $? != SUCCESS )); then
+    mucl
+    banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
+    exit ${FAILURE}
 fi
 
-if [[ ! -d $__prefix_expand ]]; then
-    printf "\rCouldn't create the directory $__prefix. Stopping installation.\n"
-    exit 1
+if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
+    mucl
+    banner_color_err 0 "$(printf "Couldn't create the directory %s. Exiting." "${prefix}")" 2
+    exit ${FAILURE}
 fi
-
-cd $__prefix_expand
-custom_git_base=$(pwd)
-cd $__currDir
-
-for shell in "${shells[@]}"; do
-    src=${__prefix_expand}.${shell}
-
-    cat > "$src" << EOF
-# Setup custom-git
-# ----------------
-if [[ ! "\$PATH" == *$custom_git_base/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$custom_git_base/cmd"
-fi
-if [[ ! "\$PATH" == *$custom_git_base/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$custom_git_base/util"
-fi
-if [[ ! "\$PATH" == *$custom_git_base/custom-console/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$custom_git_base/custom-console/cmd"
-fi
-if [[ ! "\$PATH" == *$custom_git_base/custom-console/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$custom_git_base/custom-console/util"
-fi
-
-export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
-
-EOF
-done
 
 append_line() {
     set -e
@@ -130,15 +221,41 @@ append_line() {
 }
 
 for shell in "${shells[@]}"; do
-    [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${__prefix}.${shell} ] && source ${__prefix}.${shell}" "$dest" "${__prefix}.${shell}"
+    src=${CUSTOM_GIT_HOME}.${shell}
+
+    cat > "$src" << EOF
+# ----------------
+# Setup custom-git
+# ----------------
+if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/cmd* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/cmd"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/util* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/util"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/cmd* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/cmd"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
+fi
+export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
+
+EOF
+
 done
 
-printf "\rcustom-git successfully installed.\n"
-printf "\nRestart your shell or reload config file.\n"
-
 for shell in "${shells[@]}"; do
-    case "$shell" in
+    [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
+    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+done
+
+mucl
+banner_color 0 "magenta" "*" "custom-git installed successfully." 2
+
+print_info 0 "Restart your shell or reload config file." 1
+for shell in "${shells[@]}"; do
+    case "${shell}" in
         bash)
             printf "   source ~/.bashrc  # bash"
             [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
@@ -147,10 +264,10 @@ for shell in "${shells[@]}"; do
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
             ;;
         *)
-            printf "\n$shell shell is not supported.\n\n"
+            printf "\n%s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
 
-echo
-echo 'For more information, see: https://github.com/custom-git/custom-git-bash'
+print_info 1 "For more details, visit: " 0
+print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
