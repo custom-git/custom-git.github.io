@@ -118,9 +118,8 @@ insert_new_lines 1
 
 archi=$(uname -sm)
 shells=("bash" "zsh")
-numShells=${#shells[@]}
 
-for ((i = 0 ; i < numShells ; i++)); do
+for ((i = 0 ; i < ${#shells[@]} ; i++)); do
     shell="${shells[$i]}"
     if ! $(is_command_installed "${shell}"); then
         unset shells[$i]
@@ -136,7 +135,41 @@ prefix='~/.custom-git'
 currDir="$(pwd)"
 
 CUSTOM_GIT_HOME="$HOME"/.custom-git
-CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
+
+function install_clipboard() {
+
+    clipboard_installation_status=$SUCCESS
+
+    if ! $(is_command_installed "npm"); then
+        clipboard_installation_status=$FAILURE
+        banner_color_err 1 "npm not installed." 2
+        return
+    fi
+    print_info 0 "Installing clipboard-cli ..." 1
+    sudo npm install -g clipboard-cli &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        clipboard_installation_status=$FAILURE
+        mucl
+        mucl
+        banner_color_err 0 "clipboard-cli installation failed." 2
+        return
+    fi
+
+    mucl
+    mucl
+    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+}
+
+if ! $(is_command_installed "clipboard"); then
+
+    install_clipboard
+    if [[ $clipboard_installation_status -eq $FAILURE ]]; then
+        print_info 0 "Please install clipboard-cli from " 0
+        print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
+        print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+    fi
+fi
 
 function install_fzf() {
 
@@ -185,7 +218,8 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
 fi
 
 print_info 0 "Installing custom-git..." 1
-git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+# git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+git clone --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
 if (( $? != SUCCESS )); then
     mucl
     banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
@@ -222,33 +256,8 @@ append_line() {
 }
 
 for shell in "${shells[@]}"; do
-    src=${CUSTOM_GIT_HOME}.${shell}
-
-    cat > "$src" << EOF
-# ----------------
-# Setup custom-git
-# ----------------
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/util"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
-fi
-export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
-
-EOF
-
-done
-
-for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
 done
 
 mucl
@@ -259,8 +268,7 @@ for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
             printf "   source ~/.bashrc  # bash"
-            [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
-            echo
+            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
             ;;
         zsh)
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
