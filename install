@@ -259,7 +259,8 @@ for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
             printf "   source ~/.bashrc  # bash"
-            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            echo
             ;;
         zsh)
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
