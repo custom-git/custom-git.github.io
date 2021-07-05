@@ -118,9 +118,8 @@ insert_new_lines 1
 
 archi=$(uname -sm)
 shells=("bash" "zsh")
-numShells=${#shells[@]}
 
-for ((i = 0 ; i < numShells ; i++)); do
+for ((i = 0 ; i < ${#shells[@]} ; i++)); do
     shell="${shells[$i]}"
     if ! $(is_command_installed "${shell}"); then
         unset shells[$i]
@@ -137,6 +136,41 @@ currDir="$(pwd)"
 
 CUSTOM_GIT_HOME="$HOME"/.custom-git
 CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
+
+function install_clipboard() {
+
+    clipboard_installation_status=$SUCCESS
+
+    if ! $(is_command_installed "npm"); then
+        clipboard_installation_status=$FAILURE
+        banner_color_err 1 "npm not installed." 2
+        return
+    fi
+    print_info 0 "Installing clipboard-cli ..." 1
+    sudo npm install -g clipboard-cli &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        clipboard_installation_status=$FAILURE
+        mucl
+        mucl
+        banner_color_err 0 "clipboard-cli installation failed." 2
+        return
+    fi
+
+    mucl
+    mucl
+    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+}
+
+if ! $(is_command_installed "clipboard"); then
+
+    install_clipboard
+    if [[ $clipboard_installation_status -eq $FAILURE ]]; then
+        print_info 0 "Please install clipboard-cli from " 0
+        print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
+        print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+    fi
+fi
 
 function install_fzf() {
 
