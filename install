@@ -135,6 +135,7 @@ prefix='~/.custom-git'
 currDir="$(pwd)"
 
 CUSTOM_GIT_HOME="$HOME"/.custom-git
+CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
 
 function install_clipboard() {
 
@@ -218,8 +219,7 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
 fi
 
 print_info 0 "Installing custom-git..." 1
-# git clone -b v0.1.0 --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
-git clone --depth 1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+git clone -b release-0.1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
 if (( $? != SUCCESS )); then
     mucl
     banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
@@ -256,8 +256,33 @@ append_line() {
 }
 
 for shell in "${shells[@]}"; do
+    src=${CUSTOM_GIT_HOME}.${shell}
+
+    cat > "$src" << EOF
+# ----------------
+# Setup custom-git
+# ----------------
+if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/cmd* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/cmd"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/util* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/util"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/cmd* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/cmd"
+fi
+if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
+    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
+fi
+export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
+EOF
+
+done
+
+for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
+    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+    # append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
 done
 
 mucl
