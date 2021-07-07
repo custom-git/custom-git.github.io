@@ -116,10 +116,10 @@ function is_command_installed() {
 
 insert_new_lines 1
 
-archi=$(uname -sm)
 shells=("bash" "zsh")
+numShells=${#shells[@]}
 
-for ((i = 0 ; i < ${#shells[@]} ; i++)); do
+for ((i = 0 ; i < numShells ; i++)); do
     shell="${shells[$i]}"
     if ! $(is_command_installed "${shell}"); then
         unset shells[$i]
@@ -275,6 +275,7 @@ if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
     export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
 fi
 export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
+
 EOF
 
 done
@@ -293,7 +294,9 @@ for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
             printf "   source ~/.bashrc  # bash"
-            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            archi=$(uname -sm)
+            [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            echo
             ;;
         zsh)
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
