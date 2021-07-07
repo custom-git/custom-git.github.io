@@ -185,7 +185,7 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
 fi
 
 print_info 0 "Installing custom-git..." 1
-git clone -b v0.1.0 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+git clone -b release-0.1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
 if (( $? != SUCCESS )); then
     mucl
     banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
