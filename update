@@ -1,0 +1,293 @@
+#!/bin/bash
+
+#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded.
+#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME.
+#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching.
+#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
+#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
+
+##################
+# util functions #
+##################
+
+SUCCESS=0
+FAILURE=1
+
+MOVE_UP=$(tput cuu 1)
+CLEAR_LINE=$(tput el 1)
+
+function mucl() {
+    echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+}
+
+function apply_tput() {
+
+    case "${1}" in
+        black) tput setaf 0
+        ;;
+        red) tput setaf 1
+        ;;
+        green) tput setaf 2
+        ;;
+        yellow) tput setaf 3
+        ;;
+        blue) tput setaf 4
+        ;;
+        magenta) tput setaf 5
+        ;;
+        cyan) tput setaf 6
+        ;;
+        white) tput setaf 7
+        ;;
+        reset) tput sgr0
+        ;;
+        *) tput "${1}"
+        ;;
+    esac
+}
+
+# Usage: insert_new_lines 3
+function insert_new_lines() {
+    for (( i = 0; i < ${1}; i++)); do
+        echo
+    done
+}
+
+# Usage: banner_color 1 "red" "*" "my title" 2
+function banner_color() {
+    insert_new_lines ${1}
+
+    apply_tput "${2}"
+    apply_tput bold
+
+    local msg="${3} ${4} ${3}"
+    local edge
+    edge=${msg//?/$3}
+    echo "${edge}"
+    echo "${msg}"
+    printf "%s" "${edge}"
+
+    apply_tput reset
+
+    insert_new_lines ${5}
+}
+
+# Usage: banner_color_err 1 "error msg" 2
+function banner_color_err() {
+    banner_color ${1} "red" "~" "[ERROR] ${2}" ${3}
+}
+
+# Usage: print_as 3 "blue" "msg" 1
+function print_as() {
+    insert_new_lines ${1}; shift
+
+	while [[ $# -gt 2 ]]; do
+		apply_tput "${1}"; shift
+	done
+	local msg="${1}"; shift
+	printf "%s" "${msg}"
+	apply_tput reset
+
+    insert_new_lines ${1};
+}
+
+# Usage: print_info 3 "msg" 2
+function print_info() {
+	print_as ${1} "blue" "[INFO] ${2}" ${3}
+}
+
+# Usage: print_err 3 "msg" 2
+function print_err() {
+	print_as ${1} "red" "[ERROR] ${2}" ${3}
+}
+
+function is_command_installed() {
+
+    if command -v "${1}" &>/dev/null; then
+        echo true
+    else
+        echo false
+    fi
+}
+
+function append_line() {
+    set -e
+
+    local line file pat lno
+    line="$1"
+    file="$2"
+    pat="${3:-}"
+    lno=""
+
+    if [ -f "$file" ]; then
+        if [ $# -lt 4 ]; then
+            lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        else
+            lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        fi
+    fi
+    if [ -z "$lno" ]; then
+        [ -f "$file" ] && echo >> "$file"
+        echo "$line" >> "$file"
+    fi
+    set +e
+}
+
+function get_current_branch() {
+    git rev-parse --abbrev-ref HEAD
+}
+
+
+#####################
+# Update custom-git #
+#####################
+
+insert_new_lines 1
+
+CUSTOM_GIT_HOME="${HOME}"/.custom-git
+
+if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
+    banner_color_err 0 "custom-git is not installed on your system." 2
+    print_info 0 "Visit " 0
+    print_as 0 "magenta" "bold" "https://custom-git.io" 0
+    print_as 0 "blue" " for easy installation steps." 2
+    exit ${FAILURE}
+fi
+
+shells=("bash" "zsh")
+numShells=${#shells[@]}
+
+for ((i = 0 ; i < numShells ; i++)); do
+    shell="${shells[$i]}"
+    if ! $(is_command_installed "${shell}"); then
+        unset shells[$i]
+    fi
+done
+
+if [[ ${#shells[@]} -eq 0 ]]; then
+    banner_color_err 0 "custom-git is only supported for bash and zsh shells. Stopping updation." 2
+    print_info 0 "Visit " 0
+    print_as 0 "magenta" "bold" "https://custom-git.io" 0
+    print_as 0 "blue" " for more information." 2
+    exit ${FAILURE}
+fi
+
+prefix='~/.custom-git'
+currDir="$(pwd)"
+
+function install_clipboard() {
+
+    clipboard_installation_status=$SUCCESS
+
+    if ! $(is_command_installed "npm"); then
+        clipboard_installation_status=$FAILURE
+        banner_color_err 1 "npm not installed." 2
+        return
+    fi
+    print_info 0 "Installing clipboard-cli ..." 1
+    sudo npm install -g clipboard-cli &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        clipboard_installation_status=$FAILURE
+        mucl
+        mucl
+        banner_color_err 0 "clipboard-cli installation failed." 2
+        return
+    fi
+
+    mucl
+    mucl
+    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+}
+
+if ! $(is_command_installed "clipboard"); then
+
+    install_clipboard
+    if [[ $clipboard_installation_status -eq $FAILURE ]]; then
+        print_info 0 "Please install clipboard-cli from " 0
+        print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
+        print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+    fi
+fi
+
+cd "${CUSTOM_GIT_HOME}" || {
+    banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
+    exit ${FAILURE}
+}
+
+latestReleaseVersion="release-1.0"
+print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
+
+currVersion="$(get_current_branch)"
+case "${currVersion}" in
+    release1.0|HEAD)
+        for shell in "${shells[@]}"; do
+            initFile="${CUSTOM_GIT_HOME}.${shell}"
+            [ -f "${initFile}" ] && rm "${initFile}"
+            # TODO: delete source initFile from ~/.bashrc and/or ~/.zshrc
+        done
+    ;;
+    *)
+    ;;
+esac
+
+git pull --ff-only &> /dev/null
+if (( $? != SUCCESS )); then
+    mucl
+    banner_color_err 0 "Fast-Forward failed. Please check your network." 2
+    exit ${FAILURE}
+fi
+
+git checkout "${latestReleaseVersion}" &> /dev/null
+if (( $? != SUCCESS )); then
+    mucl
+    banner_color_err 0 "Switching to new version failed. Please check your network." 2
+    exit ${FAILURE}
+fi
+
+git submodule update --init &> /dev/null
+if (( $? != SUCCESS )); then
+    mucl
+    banner_color_err 0 "Submodule update failed. Please check your network." 2
+    exit ${FAILURE}
+fi
+
+newVersion="$(get_current_branch)"
+if [[ "${newVersion}" != "${latestReleaseVersion}" ]]; then
+    mucl
+    banner_color_err 0 "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error." 2
+    exit ${FAILURE}
+fi
+
+cd "${currDir}" || {
+    banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+    exit ${FAILURE}
+}
+
+for shell in "${shells[@]}"; do
+    [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
+done
+
+mucl
+banner_color 0 "magenta" "*" "custom-git updated to ${latestReleaseVersion}." 2
+
+print_info 0 "Restart your shell or reload config file." 1
+for shell in "${shells[@]}"; do
+    case "${shell}" in
+        bash)
+            printf "   source ~/.bashrc  # bash"
+            archi=$(uname -sm)
+            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            ;;
+        zsh)
+            echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+            ;;
+        *)
+            printf "\n%s shell is not supported.\n" "${shell}"
+            ;;
+    esac
+done
+
+print_info 1 "For more details, visit: " 0
+print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
