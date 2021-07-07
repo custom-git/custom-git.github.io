@@ -220,7 +220,7 @@ print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
 
 currVersion="$(get_current_branch)"
 case "${currVersion}" in
-    release1.0|HEAD)
+    release-0.1|HEAD)
         for shell in "${shells[@]}"; do
             initFile="${CUSTOM_GIT_HOME}.${shell}"
             [ -f "${initFile}" ] && rm "${initFile}"
@@ -278,7 +278,8 @@ for shell in "${shells[@]}"; do
         bash)
             printf "   source ~/.bashrc  # bash"
             archi=$(uname -sm)
-            [[ "$archi" =~ Darwin ]] && echo "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            echo
             ;;
         zsh)
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
