@@ -20,6 +20,16 @@ function mucl() {
     echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
 }
 
+currDir="$(pwd)"
+
+function finish {
+    cd "${currDir}" || {
+        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        exit ${FAILURE}
+    }
+}
+trap finish EXIT
+
 function apply_tput() {
 
     case "${1}" in
@@ -158,16 +168,6 @@ function get_current_branch() {
 
 insert_new_lines 1
 
-CUSTOM_GIT_HOME="${HOME}"/.custom-git
-
-if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
-    banner_color_err 0 "custom-git is not installed on your system." 2
-    print_info 0 "Visit " 0
-    print_as 0 "magenta" "bold" "https://custom-git.io" 0
-    print_as 0 "blue" " for easy installation steps." 2
-    exit ${FAILURE}
-fi
-
 shells=("bash" "zsh")
 numShells=${#shells[@]}
 
@@ -187,7 +187,17 @@ if [[ ${#shells[@]} -eq 0 ]]; then
 fi
 
 prefix='~/.custom-git'
-currDir="$(pwd)"
+
+CUSTOM_GIT_HOME="${HOME}"/.custom-git
+FZF_HOME="${HOME}"/.fzf
+
+if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
+    banner_color_err 0 "custom-git is not installed on your system." 2
+    print_info 0 "Visit " 0
+    print_as 0 "magenta" "bold" "https://custom-git.io" 0
+    print_as 0 "blue" " for easy installation steps." 2
+    exit ${FAILURE}
+fi
 
 function install_clipboard() {
 
@@ -221,6 +231,42 @@ if ! $(is_command_installed "clipboard"); then
         print_info 0 "Please install clipboard-cli from " 0
         print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
         print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+    fi
+fi
+
+function install_fzf() {
+
+    print_info 0 "Installing fzf ..." 1
+
+    fzf_installation_status=${SUCCESS}
+    git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
+    cd "${FZF_HOME}" || {
+        fzf_installation_status=$FAILURE
+        mucl
+        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
+        return
+    }
+    ./install --all &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        fzf_installation_status=${FAILURE}
+        mucl
+        banner_color_err 0 "fzf installation failed." 2
+        return
+    fi
+
+    mucl
+    banner_color 0 "magenta" "*" "fzf installed." 2
+}
+
+if ! $(is_command_installed "fzf"); then
+
+    install_fzf
+    if [[ $fzf_installation_status -eq $FAILURE ]]; then
+        print_info 0 "Please install fzf from " 0
+        print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
+        print_as 0 "blue" "and try again..." 2
+        exit ${FAILURE}
     fi
 fi
 
@@ -267,11 +313,6 @@ assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_current_branch)"
 assert_equal "${newVersion}" "${latestReleaseVersion}" "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error."
-
-cd "${currDir}" || {
-    banner_color_err 0 "couldn't enter directory: ${currDir}" 2
-    exit ${FAILURE}
-}
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
