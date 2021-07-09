@@ -20,6 +20,16 @@ function mucl() {
     echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
 }
 
+currDir="$(pwd)"
+
+function finish {
+    cd "${currDir}" || {
+        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        exit ${FAILURE}
+    }
+}
+trap finish EXIT
+
 function apply_tput() {
 
     case "${1}" in
@@ -110,6 +120,43 @@ function is_command_installed() {
     fi
 }
 
+function append_line() {
+    set -e
+
+    local line="${1}" file="${2}" pat="${3:-}" lno=""
+
+    if [ -f "$file" ]; then
+        if [ $# -lt 4 ]; then
+            lno=$(grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        else
+            lno=$(grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        fi
+    fi
+    if [ -z "$lno" ]; then
+        [ -f "$file" ] && echo >> "$file"
+        echo "$line" >> "$file"
+    fi
+    set +e
+}
+
+# Usage: assert_equal A B msg
+function assert_equal() {
+
+    local A="${1}" B="${2}" msg="${3}"
+    [[ "${A}" != "${B}" ]] && {
+        mucl
+        banner_color_err 0 "${msg}" 2
+        exit ${FAILURE}
+    }
+}
+
+# Usage: assert_success msg
+function assert_success() {
+
+    local status="$?" msg="${1}"
+    assert_equal "${status}" ${SUCCESS} "${msg}"
+}
+
 #####################
 # Enable custom-git #
 #####################
@@ -132,10 +179,10 @@ if [[ ${#shells[@]} -eq 0 ]]; then
 fi
 
 prefix='~/.custom-git'
-currDir="$(pwd)"
 
-CUSTOM_GIT_HOME="$HOME"/.custom-git
+CUSTOM_GIT_HOME="${HOME}"/.custom-git
 CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
+FZF_HOME="${HOME}"/.fzf
 
 function install_clipboard() {
 
@@ -176,18 +223,18 @@ function install_fzf() {
 
     print_info 0 "Installing fzf ..." 1
 
-    fzf_installation_status=$SUCCESS
-    git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME"/.fzf &> /dev/null
-    cd "$HOME"/.fzf || {
+    fzf_installation_status=${SUCCESS}
+    git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
+    cd "${FZF_HOME}" || {
         fzf_installation_status=$FAILURE
         mucl
-        banner_color_err 0 "couldn't enter directory: $HOME/.fzf" 2
+        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
         return
     }
     ./install --all &> /dev/null
 
     if (( $? != SUCCESS )); then
-        fzf_installation_status=$FAILURE
+        fzf_installation_status=${FAILURE}
         mucl
         banner_color_err 0 "fzf installation failed." 2
         return
@@ -195,11 +242,6 @@ function install_fzf() {
 
     mucl
     banner_color 0 "magenta" "*" "fzf installed." 2
-
-    cd "$currDir" || {
-        banner_color_err 0 "couldn't enter directory: $currDir" 2
-        return
-    }
 }
 
 if ! $(is_command_installed "fzf"); then
@@ -209,7 +251,7 @@ if ! $(is_command_installed "fzf"); then
         print_info 0 "Please install fzf from " 0
         print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
         print_as 0 "blue" "and try again..." 2
-        exit $FAILURE
+        exit ${FAILURE}
     fi
 fi
 
@@ -220,40 +262,13 @@ fi
 
 print_info 0 "Installing custom-git..." 1
 git clone -b release-0.1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
-if (( $? != SUCCESS )); then
-    mucl
-    banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
-    exit ${FAILURE}
-fi
+assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     mucl
     banner_color_err 0 "$(printf "Couldn't create the directory %s. Exiting." "${prefix}")" 2
     exit ${FAILURE}
 fi
-
-append_line() {
-    set -e
-
-    local line file pat lno
-    line="$1"
-    file="$2"
-    pat="${3:-}"
-    lno=""
-
-    if [ -f "$file" ]; then
-        if [ $# -lt 4 ]; then
-            lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
-        else
-            lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
-        fi
-    fi
-    if [ -z "$lno" ]; then
-        [ -f "$file" ] && echo >> "$file"
-        echo "$line" >> "$file"
-    fi
-    set +e
-}
 
 for shell in "${shells[@]}"; do
     src=${CUSTOM_GIT_HOME}.${shell}
@@ -287,7 +302,7 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git installed successfully." 2
+banner_color 0 "magenta" "*" "custom-git installation complete." 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
@@ -302,7 +317,7 @@ for shell in "${shells[@]}"; do
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
             ;;
         *)
-            printf "\n%s shell is not supported.\n" "${shell}"
+            printf "\n   %s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
