@@ -113,17 +113,13 @@ function is_command_installed() {
 function append_line() {
     set -e
 
-    local line file pat lno
-    line="$1"
-    file="$2"
-    pat="${3:-}"
-    lno=""
+    local line="${1}" file="${2}" pat="${3:-}" lno=""
 
     if [ -f "$file" ]; then
         if [ $# -lt 4 ]; then
-            lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
+            lno=$(grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
         else
-            lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
+            lno=$(grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
         fi
     fi
     if [ -z "$lno" ]; then
@@ -131,6 +127,24 @@ function append_line() {
         echo "$line" >> "$file"
     fi
     set +e
+}
+
+# Usage: assert_equal A B msg
+function assert_equal() {
+
+    local A="${1}" B="${2}" msg="${3}"
+    [[ "${A}" != "${B}" ]] && {
+        mucl
+        banner_color_err 0 "${msg}" 2
+        exit ${FAILURE}
+    }
+}
+
+# Usage: assert_success msg
+function assert_success() {
+
+    local status="$?" msg="${1}"
+    assert_equal "${status}" ${SUCCESS} "${msg}"
 }
 
 function get_current_branch() {
@@ -220,7 +234,7 @@ print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
 
 currVersion="$(get_current_branch)"
 case "${currVersion}" in
-    release-0.1|HEAD)
+    release-0.1|main|HEAD)
         for shell in "${shells[@]}"; do
             initFile="${CUSTOM_GIT_HOME}.${shell}"
             [ -f "${initFile}" ] && rm "${initFile}"
@@ -231,33 +245,28 @@ case "${currVersion}" in
     ;;
 esac
 
-git pull --ff-only &> /dev/null
-if (( $? != SUCCESS )); then
-    mucl
-    banner_color_err 0 "Fast-Forward failed. Please check your network." 2
-    exit ${FAILURE}
+if [[ "${currVersion}" != "HEAD" ]]; then
+    git pull --ff-only &> /dev/null
+    assert_success "Fast-Forward failed. Please check your network."
+else
+    clone_depth=$(git rev-list --count --all)
+    if [[ ${clone_depth} -eq 1 ]]; then
+        git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+        git fetch --unshallow &> /dev/null
+    else
+        git fetch &> /dev/null
+    fi
+    assert_success "Fetching custom-git failed. Please check your network."
 fi
 
 git checkout "${latestReleaseVersion}" &> /dev/null
-if (( $? != SUCCESS )); then
-    mucl
-    banner_color_err 0 "Switching to new version failed. Please check your network." 2
-    exit ${FAILURE}
-fi
+assert_success "Switching to new version failed. Please check your network."
 
 git submodule update --init &> /dev/null
-if (( $? != SUCCESS )); then
-    mucl
-    banner_color_err 0 "Submodule update failed. Please check your network." 2
-    exit ${FAILURE}
-fi
+assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_current_branch)"
-if [[ "${newVersion}" != "${latestReleaseVersion}" ]]; then
-    mucl
-    banner_color_err 0 "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error." 2
-    exit ${FAILURE}
-fi
+assert_equal "${newVersion}" "${latestReleaseVersion}" "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error."
 
 cd "${currDir}" || {
     banner_color_err 0 "couldn't enter directory: ${currDir}" 2
@@ -266,7 +275,7 @@ cd "${currDir}" || {
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
 done
 
 mucl
@@ -285,7 +294,7 @@ for shell in "${shells[@]}"; do
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
             ;;
         *)
-            printf "\n%s shell is not supported.\n" "${shell}"
+            printf "\n   %s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
