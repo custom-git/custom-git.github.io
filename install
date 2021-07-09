@@ -181,8 +181,9 @@ fi
 prefix='~/.custom-git'
 
 CUSTOM_GIT_HOME="${HOME}"/.custom-git
-CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
 FZF_HOME="${HOME}"/.fzf
+CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
+CUSTOM_GIT_CLONE_URL="${CUSTOM_GIT_BASH_REPO_URL}.git"
 
 function install_clipboard() {
 
@@ -260,8 +261,9 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit $SUCCESS
 fi
 
-print_info 0 "Installing custom-git..." 1
-git clone -b release-0.1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
+latestReleaseVersion="release-1.0"
+print_info 0 "Installing custom-git ${latestReleaseVersion}..." 1
+git clone -b "${latestReleaseVersion}" "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
@@ -271,34 +273,8 @@ if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
 fi
 
 for shell in "${shells[@]}"; do
-    src=${CUSTOM_GIT_HOME}.${shell}
-
-    cat > "$src" << EOF
-# ----------------
-# Setup custom-git
-# ----------------
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/util"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
-fi
-export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
-
-EOF
-
-done
-
-for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
-    # append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "${prefix}/init.${shell}"
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
 done
 
 mucl
@@ -323,4 +299,4 @@ for shell in "${shells[@]}"; do
 done
 
 print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2
