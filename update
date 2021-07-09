@@ -190,6 +190,7 @@ prefix='~/.custom-git'
 
 CUSTOM_GIT_HOME="${HOME}"/.custom-git
 FZF_HOME="${HOME}"/.fzf
+CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     banner_color_err 0 "custom-git is not installed on your system." 2
@@ -341,4 +342,4 @@ for shell in "${shells[@]}"; do
 done
 
 print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2
