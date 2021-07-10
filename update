@@ -5,6 +5,7 @@
 #shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching.
 #shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
+#shellcheck disable=SC2181      # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
 
 ##################
 # util functions #
@@ -17,7 +18,14 @@ MOVE_UP=$(tput cuu 1)
 CLEAR_LINE=$(tput el 1)
 
 function mucl() {
-    echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+    if [[ $# -eq 0 ]]; then
+        numIterations=1
+    else
+        numIterations=${1}
+    fi
+    for (( i = 0; i < numIterations; i++)); do
+        echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+    done
 }
 
 currDir="$(pwd)"
@@ -120,6 +128,18 @@ function is_command_installed() {
     fi
 }
 
+function ask() {
+    while true; do
+        read -p "${1} ([y]/n) " -r
+        REPLY=${REPLY:-"y"}
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            return 0
+        elif [[ $REPLY =~ ^[Nn]$ ]]; then
+            return 1
+        fi
+    done
+}
+
 function append_line() {
     set -e
 
@@ -142,19 +162,18 @@ function append_line() {
 function remove_file() {
     local file="${1}"
     [ -f "${file}" ] && {
-        print_info "Remove ${file}"
+        print_info 0 "Remove ${file}" 1
         rm -f "${file}"
     }
 }
 
-
 function remove_line() {
     src=$(readlink "$1")
     if [ $? -eq 0 ]; then
-        echo "Remove from $1 ($src):"
+        print_info 0 "Remove from ${1} ($src):" 1
     else
         src=$1
-        echo "Remove from $1:"
+        print_info 0 "Remove from ${1}:" 1
     fi
 
     shift
@@ -170,7 +189,7 @@ function remove_line() {
         line_no=$(( $(sed 's/:.*//' <<< "$line") + line_no - 1 ))
         content=$(sed 's/^[0-9]*://' <<< "$line")
         match=1
-        echo    "  - Line #$line_no: $content"
+        echo "  - Line #$line_no: $content"
         [ "$content" = "$1" ] || ask "    - Remove?"
         if [ $? -eq 0 ]; then
             awk -v n=$line_no 'NR == n {next} {print}' "$src" > "$src.bak" &&
@@ -209,26 +228,21 @@ function get_current_branch() {
 
 function install_clipboard() {
 
-    clipboard_installation_status=$SUCCESS
-
     if ! $(is_command_installed "npm"); then
-        clipboard_installation_status=$FAILURE
         banner_color_err 1 "npm not installed." 2
-        return
+        return ${FAILURE}
     fi
+
     print_info 0 "Installing clipboard-cli ..." 1
     sudo npm install -g clipboard-cli &> /dev/null
 
     if (( $? != SUCCESS )); then
-        clipboard_installation_status=$FAILURE
-        mucl
-        mucl
+        mucl 2
         banner_color_err 0 "clipboard-cli installation failed." 2
-        return
+        return ${FAILURE}
     fi
 
-    mucl
-    mucl
+    mucl 2
     banner_color 0 "magenta" "*" "clipboard-cli installed." 2
 }
 
@@ -236,21 +250,24 @@ function install_fzf() {
 
     print_info 0 "Installing fzf ..." 1
 
-    fzf_installation_status=${SUCCESS}
     git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
+    if (( $? != SUCCESS )); then
+        mucl
+        banner_color_err 0 "Fetching fzf failed. Please check your network." 2
+        return ${FAILURE}
+    fi
+
     cd "${FZF_HOME}" || {
-        fzf_installation_status=$FAILURE
         mucl
         banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
-        return
+        return ${FAILURE}
     }
     ./install --all &> /dev/null
 
     if (( $? != SUCCESS )); then
-        fzf_installation_status=${FAILURE}
         mucl
         banner_color_err 0 "fzf installation failed." 2
-        return
+        return ${FAILURE}
     fi
 
     mucl
@@ -299,7 +316,7 @@ fi
 if ! $(is_command_installed "clipboard"); then
 
     install_clipboard
-    if [[ $clipboard_installation_status -eq $FAILURE ]]; then
+    if (( $? != SUCCESS )); then
         print_info 0 "Please install clipboard-cli from " 0
         print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
         print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
@@ -309,10 +326,9 @@ fi
 if ! $(is_command_installed "fzf"); then
 
     install_fzf
-    if [[ $fzf_installation_status -eq $FAILURE ]]; then
-        print_info 0 "Please install fzf from " 0
-        print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
-        print_as 0 "blue" "and try again..." 2
+    if (( $? != SUCCESS )); then
+        print_info 0 "Please try again after installing fzf from " 0
+        print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 2
         exit ${FAILURE}
     fi
 fi
@@ -321,9 +337,6 @@ cd "${CUSTOM_GIT_HOME}" || {
     banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
     exit ${FAILURE}
 }
-
-latestReleaseVersion="release-1.0"
-print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
 
 currVersion="$(get_current_branch)"
 case "${currVersion}" in
@@ -339,6 +352,9 @@ case "${currVersion}" in
     *)
     ;;
 esac
+
+latestReleaseVersion="release-1.0"
+print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
 
 if [[ "${currVersion}" != "HEAD" ]]; then
     git pull --ff-only &> /dev/null
