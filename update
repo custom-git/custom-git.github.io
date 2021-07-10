@@ -139,6 +139,15 @@ function append_line() {
     set +e
 }
 
+function remove_file() {
+    local file="${1}"
+    [ -f "${file}" ] && {
+        print_info "Remove ${file}"
+        rm -f "${file}"
+    }
+}
+
+
 function remove_line() {
     src=$(readlink "$1")
     if [ $? -eq 0 ]; then
@@ -198,6 +207,56 @@ function get_current_branch() {
     git rev-parse --abbrev-ref HEAD
 }
 
+function install_clipboard() {
+
+    clipboard_installation_status=$SUCCESS
+
+    if ! $(is_command_installed "npm"); then
+        clipboard_installation_status=$FAILURE
+        banner_color_err 1 "npm not installed." 2
+        return
+    fi
+    print_info 0 "Installing clipboard-cli ..." 1
+    sudo npm install -g clipboard-cli &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        clipboard_installation_status=$FAILURE
+        mucl
+        mucl
+        banner_color_err 0 "clipboard-cli installation failed." 2
+        return
+    fi
+
+    mucl
+    mucl
+    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+}
+
+function install_fzf() {
+
+    print_info 0 "Installing fzf ..." 1
+
+    fzf_installation_status=${SUCCESS}
+    git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
+    cd "${FZF_HOME}" || {
+        fzf_installation_status=$FAILURE
+        mucl
+        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
+        return
+    }
+    ./install --all &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        fzf_installation_status=${FAILURE}
+        mucl
+        banner_color_err 0 "fzf installation failed." 2
+        return
+    fi
+
+    mucl
+    banner_color 0 "magenta" "*" "fzf installed." 2
+}
+
 
 #####################
 # Update custom-git #
@@ -237,31 +296,6 @@ if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${FAILURE}
 fi
 
-function install_clipboard() {
-
-    clipboard_installation_status=$SUCCESS
-
-    if ! $(is_command_installed "npm"); then
-        clipboard_installation_status=$FAILURE
-        banner_color_err 1 "npm not installed." 2
-        return
-    fi
-    print_info 0 "Installing clipboard-cli ..." 1
-    sudo npm install -g clipboard-cli &> /dev/null
-
-    if (( $? != SUCCESS )); then
-        clipboard_installation_status=$FAILURE
-        mucl
-        mucl
-        banner_color_err 0 "clipboard-cli installation failed." 2
-        return
-    fi
-
-    mucl
-    mucl
-    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
-}
-
 if ! $(is_command_installed "clipboard"); then
 
     install_clipboard
@@ -271,31 +305,6 @@ if ! $(is_command_installed "clipboard"); then
         print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
     fi
 fi
-
-function install_fzf() {
-
-    print_info 0 "Installing fzf ..." 1
-
-    fzf_installation_status=${SUCCESS}
-    git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
-    cd "${FZF_HOME}" || {
-        fzf_installation_status=$FAILURE
-        mucl
-        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
-        return
-    }
-    ./install --all &> /dev/null
-
-    if (( $? != SUCCESS )); then
-        fzf_installation_status=${FAILURE}
-        mucl
-        banner_color_err 0 "fzf installation failed." 2
-        return
-    fi
-
-    mucl
-    banner_color 0 "magenta" "*" "fzf installed." 2
-}
 
 if ! $(is_command_installed "fzf"); then
 
@@ -321,7 +330,7 @@ case "${currVersion}" in
     release-0.1|main|HEAD)
         for shell in "${shells[@]}"; do
             initFile="${CUSTOM_GIT_HOME}.${shell}"
-            [ -f "${initFile}" ] && rm "${initFile}"
+            remove_file "${initFile}"
             remove_line ~/.${shell}rc \
                 "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
                 "source ${prefix}.${shell}"
@@ -352,11 +361,13 @@ git submodule update --init &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_current_branch)"
-assert_equal "${newVersion}" "${latestReleaseVersion}" "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error."
+assert_equal "${newVersion}" "${latestReleaseVersion}" \
+    "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error."
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" \
+        "$dest" "source ${prefix}/init.${shell}"
 done
 
 mucl
