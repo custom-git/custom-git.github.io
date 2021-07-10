@@ -69,7 +69,7 @@ fi
 Get Support : [support@custom-git.io](mailto:support@custom-git.io) <br>
 Say Hello : [hello@bhavidhingra.dev](mailto:hello@bhavidhingra.dev)
 
-<br><br>
+<br>
 
 ### Disqus
 
@@ -81,7 +81,7 @@ Say Hello : [hello@bhavidhingra.dev](mailto:hello@bhavidhingra.dev)
 
     var disqus_config = function () {
         this.page.url = 'https://custom-git.io';  // Replace PAGE_URL with your page's canonical URL variable
-        this.page.identifier = 'customgitmainpage'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+        this.page.identifier = 'j0SakKsidsdA5L8XPnxz'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
     };
 
     (function() { // DON'T EDIT BELOW THIS LINE
