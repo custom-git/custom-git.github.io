@@ -29,14 +29,6 @@ function mucl() {
 
 currDir="$(pwd)"
 
-function finish {
-    cd "${currDir}" || {
-        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
-        exit ${FAILURE}
-    }
-}
-trap finish EXIT
-
 function apply_tput() {
 
     case "${1}" in
@@ -209,6 +201,14 @@ function install_fzf() {
     mucl
     banner_color 0 "magenta" "*" "fzf installed." 2
 }
+
+function finish {
+    cd "${currDir}" || {
+        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        exit ${FAILURE}
+    }
+}
+trap finish EXIT
 
 #####################
 # Enable custom-git #
