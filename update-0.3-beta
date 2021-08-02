@@ -6,6 +6,7 @@
 #shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
 #shellcheck disable=SC2181      # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
+#shellcheck disable=SC2119      # Use mucl "$@" if function's $1 should mean script's $1
 
 ##################
 # util functions #
@@ -343,7 +344,7 @@ fi
 git checkout "${targetVersion}" &> /dev/null
 assert_success "Switching to new version failed. Please check your network."
 
-git submodule update --init &> /dev/null
+git submodule update --init --recursive &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_current_branch)"

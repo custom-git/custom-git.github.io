@@ -240,7 +240,7 @@ fi
 version="0.3-beta"
 targetVersion="release-${version}"
 print_info 0 "Installing custom-git ${targetVersion}..." 1
-git clone -b "${targetVersion}" "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
+git clone -b "${targetVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
