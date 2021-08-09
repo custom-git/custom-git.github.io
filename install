@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded.
-#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME.
-#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching.
-#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
-#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
+#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded
+#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME
+#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching
+#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional)
+#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting
+#shellcheck disable=SC2120      # mucl references arguments, but none are ever passed
 
 ##################
 # util functions #
@@ -17,8 +18,17 @@ MOVE_UP=$(tput cuu 1)
 CLEAR_LINE=$(tput el 1)
 
 function mucl() {
-    echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+    if [[ $# -eq 0 ]]; then
+        numIterations=1
+    else
+        numIterations=${1}
+    fi
+    for (( i = 0; i < numIterations; i++)); do
+        echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
+    done
 }
+
+currDir="$(pwd)"
 
 function apply_tput() {
 
@@ -110,13 +120,85 @@ function is_command_installed() {
     fi
 }
 
+function append_line() {
+    set -e
+
+    local line="${1}" file="${2}" pat="${3:-}" lno=""
+
+    if [ -f "$file" ]; then
+        if [ $# -lt 4 ]; then
+            lno=$(grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        else
+            lno=$(grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
+        fi
+    fi
+    if [ -z "$lno" ]; then
+        [ -f "$file" ] && echo >> "$file"
+        echo "$line" >> "$file"
+    fi
+    set +e
+}
+
+# Usage: assert_equal A B msg
+function assert_equal() {
+
+    local A="${1}" B="${2}" msg="${3}"
+    [[ "${A}" != "${B}" ]] && {
+        mucl
+        banner_color_err 0 "${msg}" 2
+        exit ${FAILURE}
+    }
+}
+
+# Usage: assert_success msg
+function assert_success() {
+
+    local status="$?" msg="${1}"
+    assert_equal "${status}" ${SUCCESS} "${msg}"
+}
+
+function install_fzf() {
+
+    print_info 0 "Installing fzf ..." 1
+
+    git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
+    if (( $? != SUCCESS )); then
+        mucl
+        banner_color_err 0 "Fetching fzf failed. Please check your network." 2
+        return ${FAILURE}
+    fi
+
+    cd "${FZF_HOME}" || {
+        mucl
+        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
+        return ${FAILURE}
+    }
+    ./install --all &> /dev/null
+
+    if (( $? != SUCCESS )); then
+        mucl
+        banner_color_err 0 "fzf installation failed." 2
+        return ${FAILURE}
+    fi
+
+    mucl
+    banner_color 0 "magenta" "*" "fzf installed." 2
+}
+
+function finish {
+    cd "${currDir}" || {
+        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        exit ${FAILURE}
+    }
+}
+trap finish EXIT
+
 #####################
 # Enable custom-git #
 #####################
 
 insert_new_lines 1
 
-archi=$(uname -sm)
 shells=("bash" "zsh")
 numShells=${#shells[@]}
 
@@ -129,68 +211,37 @@ done
 
 if [[ ${#shells[@]} -eq 0 ]]; then
     print_err 0 "custom-git is only supported for bash and zsh shells. Stopping installation." 2
-    exit $FAILURE
+    exit ${FAILURE}
 fi
 
 prefix='~/.custom-git'
-currDir="$(pwd)"
 
-CUSTOM_GIT_HOME="$HOME"/.custom-git
-CUSTOM_CONSOLE_HOME="$CUSTOM_GIT_HOME"/custom-console
-
-function install_fzf() {
-
-    print_info 0 "Installing fzf ..." 1
-
-    fzf_installation_status=$SUCCESS
-    git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME"/.fzf &> /dev/null
-    cd "$HOME"/.fzf || {
-        fzf_installation_status=$FAILURE
-        mucl
-        banner_color_err 0 "couldn't enter directory: $HOME/.fzf" 2
-        return
-    }
-    ./install --all &> /dev/null
-
-    if (( $? != SUCCESS )); then
-        fzf_installation_status=$FAILURE
-        mucl
-        banner_color_err 0 "fzf installation failed." 2
-        return
-    fi
-
-    mucl
-    banner_color 0 "magenta" "*" "fzf installed." 2
-
-    cd "$currDir" || {
-        banner_color_err 0 "couldn't enter directory: $currDir" 2
-        return
-    }
-}
+CUSTOM_GIT_HOME="${HOME}"/.custom-git
+FZF_HOME="${HOME}"/.fzf
+CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
+CUSTOM_GIT_CLONE_URL="${CUSTOM_GIT_BASH_REPO_URL}.git"
 
 if ! $(is_command_installed "fzf"); then
 
     install_fzf
-    if [[ $fzf_installation_status -eq $FAILURE ]]; then
+    if (( $? != SUCCESS )); then
         print_info 0 "Please install fzf from " 0
         print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
         print_as 0 "blue" "and try again..." 2
-        exit $FAILURE
+        exit ${FAILURE}
     fi
 fi
 
 if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     print_info 0 "custom-git is already installed on your system." 2
-    exit $SUCCESS
+    exit ${SUCCESS}
 fi
 
-print_info 0 "Installing custom-git..." 1
-git clone -b release-0.1 https://github.com/custom-git/custom-git-bash.git "${CUSTOM_GIT_HOME}" &> /dev/null
-if (( $? != SUCCESS )); then
-    mucl
-    banner_color_err 0 "Some error occurred while fetching custom-git. Please check your network." 2
-    exit ${FAILURE}
-fi
+version="0.3-beta"
+targetVersion="release-${version}"
+print_info 0 "Installing custom-git (v${version})..." 1
+git clone -b "${targetVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
+assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     mucl
@@ -198,67 +249,20 @@ if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${FAILURE}
 fi
 
-append_line() {
-    set -e
-
-    local line file pat lno
-    line="$1"
-    file="$2"
-    pat="${3:-}"
-    lno=""
-
-    if [ -f "$file" ]; then
-        if [ $# -lt 4 ]; then
-            lno=$(\grep -nF "$line" "$file" | sed 's/:.*//' | tr '\n' ' ')
-        else
-            lno=$(\grep -nF "$pat" "$file" | sed 's/:.*//' | tr '\n' ' ')
-        fi
-    fi
-    if [ -z "$lno" ]; then
-        [ -f "$file" ] && echo >> "$file"
-        echo "$line" >> "$file"
-    fi
-    set +e
-}
-
-for shell in "${shells[@]}"; do
-    src=${CUSTOM_GIT_HOME}.${shell}
-
-    cat > "$src" << EOF
-# ----------------
-# Setup custom-git
-# ----------------
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_GIT_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_GIT_HOME/util"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/cmd* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/cmd"
-fi
-if [[ ! "\$PATH" == *$CUSTOM_CONSOLE_HOME/util* ]]; then
-    export PATH="\${PATH:+\${PATH}:}$CUSTOM_CONSOLE_HOME/util"
-fi
-export FZF_DEFAULT_OPTS="--reverse --border --height 80%"
-
-EOF
-
-done
-
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
-    append_line "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" "$dest" "${prefix}.${shell}"
+    append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git installed successfully." 2
+banner_color 0 "magenta" "*" "custom-git (v${version}) installation complete." 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
             printf "   source ~/.bashrc  # bash"
+            archi=$(uname -sm)
             [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
             echo
             ;;
@@ -266,10 +270,10 @@ for shell in "${shells[@]}"; do
             echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
             ;;
         *)
-            printf "\n%s shell is not supported.\n" "${shell}"
+            printf "\n   %s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
 
 print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "https://github.com/custom-git/custom-git-bash" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2

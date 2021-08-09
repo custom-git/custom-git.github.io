@@ -4,3 +4,4 @@ setup
 begin
 install
 update
+new-commands
