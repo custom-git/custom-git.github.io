@@ -237,7 +237,7 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${SUCCESS}
 fi
 
-version="0.3-beta"
+version="0.3"
 targetVersion="release-${version}"
 print_info 0 "Installing custom-git (v${version})..." 1
 git clone -b "${targetVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null

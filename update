@@ -323,9 +323,9 @@ case "${currVersion}" in
     ;;
 esac
 
-version="0.3-beta"
+version="0.3"
 targetVersion="release-${version}"
-print_info 0 "Updating custom-git to ${targetVersion}..." 1
+print_info 0 "Updating custom-git to v${version}..." 1
 
 if [[ "${currVersion}" != "HEAD" ]]; then
     git pull --ff-only &> /dev/null
