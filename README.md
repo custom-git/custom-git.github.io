@@ -4,7 +4,7 @@ An open source, general-purpose, highly efficient command line git tool.
 
 Visit the [custom-git YouTube Channel](https://www.youtube.com/channel/UC_pNb_w0nc_mnfBOUtCmhQQ) for videos of hands-on implementation of the custom-git commands.
 
-<iframe width="600" height="337.5" src="https://www.youtube.com/embed/StaPAVXnAm0?start=166&end=186&controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0&fs=1&iv_load_policy=3&widget_referrer=https://custom-git.io" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="600" height="337.5" src="https://www.youtube.com/embed/StaPAVXnAm0?controls=0&modestbranding=1&disablekb=1&autohide=1&rel=0&fs=1&iv_load_policy=3&widget_referrer=https://custom-git.io" title="gadd demo" frameborder="0" allow="clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ### Note for Windows users
 
@@ -90,5 +90,7 @@ Say Hello : [hello@bhavidhingra.dev](mailto:hello@bhavidhingra.dev)
     s.setAttribute('data-timestamp', +new Date());
     (d.head || d.body).appendChild(s);
     })();
+
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
