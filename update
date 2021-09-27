@@ -6,6 +6,7 @@
 #shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
 #shellcheck disable=SC2181      # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
+#shellcheck disable=SC2119      # Use mucl "$@" if function's $1 should mean script's $1
 
 ##################
 # util functions #
@@ -352,8 +353,9 @@ case "${currVersion}" in
     ;;
 esac
 
-latestReleaseVersion="release-1.0"
-print_info 0 "Updating custom-git to ${latestReleaseVersion}..." 1
+version="0.3"
+targetVersion="release-${version}"
+print_info 0 "Updating custom-git to v${version}..." 1
 
 if [[ "${currVersion}" != "HEAD" ]]; then
     git pull --ff-only &> /dev/null
@@ -369,15 +371,15 @@ else
     assert_success "Fetching custom-git failed. Please check your network."
 fi
 
-git checkout "${latestReleaseVersion}" &> /dev/null
+git checkout "${targetVersion}" &> /dev/null
 assert_success "Switching to new version failed. Please check your network."
 
-git submodule update --init &> /dev/null
+git submodule update --init --recursive &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_current_branch)"
-assert_equal "${newVersion}" "${latestReleaseVersion}" \
-    "Couldn't update custom-git to ${latestReleaseVersion}. Unknown error."
+assert_equal "${newVersion}" "${targetVersion}" \
+    "Couldn't update custom-git to ${targetVersion}. Unknown error."
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
@@ -386,7 +388,7 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git updated to ${latestReleaseVersion}." 2
+banner_color 0 "magenta" "*" "custom-git updated to v${version}." 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do

@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded.
-#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME.
-#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching.
-#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
-#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
+#shellcheck disable=SC2184      # Quote arguments to unset so they're not glob expanded
+#shellcheck disable=SC2088      # Tilde does not expand in quotes. Use $HOME
+#shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching
+#shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional)
+#shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting
+#shellcheck disable=SC2120      # mucl references arguments, but none are ever passed
 
 ##################
 # util functions #
@@ -264,9 +265,10 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${SUCCESS}
 fi
 
-latestReleaseVersion="release-1.0"
-print_info 0 "Installing custom-git ${latestReleaseVersion}..." 1
-git clone -b "${latestReleaseVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
+version="0.3"
+targetVersion="release-${version}"
+print_info 0 "Installing custom-git (v${version})..." 1
+git clone -b "${targetVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
@@ -281,7 +283,7 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git installation complete." 2
+banner_color 0 "magenta" "*" "custom-git (v${version}) installation complete." 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
