@@ -215,8 +215,13 @@ function assert_success() {
     assert_equal "${status}" ${SUCCESS} "${msg}"
 }
 
-function get_current_branch() {
-    git rev-parse --abbrev-ref HEAD
+function get_latest_annotated_tag() {
+    git describe --abbrev=0 &> /dev/null
+    if [[ $? -ne SUCCESS ]]; then
+        echo ""
+        return
+    fi
+    git describe --abbrev=0
 }
 
 function install_clipboard() {
@@ -338,48 +343,42 @@ cd "${CUSTOM_GIT_HOME}" || {
     exit ${FAILURE}
 }
 
-currVersion="$(get_current_branch)"
-case "${currVersion}" in
-    release-0.1|main|HEAD)
-        for shell in "${shells[@]}"; do
-            initFile="${CUSTOM_GIT_HOME}.${shell}"
+########## handle v0.1.0 install issues ##########
+currVersion="$(get_latest_annotated_tag)"
+if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
+    for shell in "${shells[@]}"; do
+        initFile="${CUSTOM_GIT_HOME}.${shell}"
+        [ -f "${initFile}" ] && {
             remove_file "${initFile}"
             remove_line ~/.${shell}rc \
                 "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
                 "source ${prefix}.${shell}"
-        done
-    ;;
-    *)
-    ;;
-esac
-
-version="0.3"
-targetVersion="release-${version}"
-print_info 0 "Updating custom-git to v${version}..." 1
-
-if [[ "${currVersion}" != "HEAD" ]]; then
-    git pull --ff-only &> /dev/null
-    assert_success "Fast-Forward failed. Please check your network."
-else
+        }
+    done
     clone_depth=$(git rev-list --count --all)
     if [[ ${clone_depth} -eq 1 ]]; then
         git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
         git fetch --unshallow &> /dev/null
-    else
-        git fetch &> /dev/null
     fi
-    assert_success "Fetching custom-git failed. Please check your network."
 fi
+##################################################
 
-git checkout "${targetVersion}" &> /dev/null
+
+git switch main &> /dev/null
+git pull &> /dev/null
+assert_success "Fetching custom-git failed. Please check your network."
+
+version="v0.7"
+print_info 0 "Updating - custom-git ${version}..." 1
+git checkout "${version}" &> /dev/null
 assert_success "Switching to new version failed. Please check your network."
 
 git submodule update --init --recursive &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
-newVersion="$(get_current_branch)"
-assert_equal "${newVersion}" "${targetVersion}" \
-    "Couldn't update custom-git to ${targetVersion}. Unknown error."
+newVersion="$(get_latest_annotated_tag)"
+assert_equal "${newVersion}" "${version}" \
+    "Couldn't update custom-git to ${version}. Unknown error."
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
@@ -388,7 +387,7 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git updated to v${version}." 2
+banner_color 0 "magenta" "*" "Update complete - custom-git ${version}" 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do

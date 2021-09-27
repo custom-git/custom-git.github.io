@@ -215,8 +215,13 @@ function assert_success() {
     assert_equal "${status}" ${SUCCESS} "${msg}"
 }
 
-function get_current_branch() {
-    git rev-parse --abbrev-ref HEAD
+function get_latest_annotated_tag() {
+    git describe --abbrev=0 &> /dev/null
+    if [[ $? -ne SUCCESS ]]; then
+        echo ""
+        return
+    fi
+    git describe --abbrev=0
 }
 
 function finish {
@@ -262,36 +267,37 @@ if [[ ${#shells[@]} -eq 0 ]]; then
 fi
 
 prefix='~/.custom-git'
-CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
+CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 cd "${CUSTOM_GIT_HOME}" || {
     banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
     exit ${FAILURE}
 }
 
-currVersion="$(get_current_branch)"
-case "${currVersion}" in
-    release-0.1|main|HEAD)
-        for shell in "${shells[@]}"; do
-            initFile="${CUSTOM_GIT_HOME}.${shell}"
+currVersion="$(get_latest_annotated_tag)"
+if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
+    for shell in "${shells[@]}"; do
+        initFile="${CUSTOM_GIT_HOME}.${shell}"
+        [ -f "${initFile}" ] && {
             remove_file "${initFile}"
             remove_line ~/.${shell}rc \
                 "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
                 "source ${prefix}.${shell}"
-        done
-    ;;
-    *)
-        for shell in "${shells[@]}"; do
-            remove_line ~/.${shell}rc \
-                "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" \
-                "source ${prefix}/init.${shell}"
-        done
-    ;;
-esac
+        }
+    done
+fi
+for shell in "${shells[@]}"; do
+    initFile="${HOME}/.${shell}rc"
+    [ -f "${initFile}" ] && {
+        remove_line ~/.${shell}rc \
+            "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" \
+            "source ${prefix}/init.${shell}"
+    }
+done
 
 remove_dir "${CUSTOM_GIT_HOME}"
 
 banner_color 1 "red" "#" "custom-git uninstalled." 2
 
 print_info 0 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2

@@ -238,6 +238,7 @@ CUSTOM_GIT_HOME="${HOME}"/.custom-git
 FZF_HOME="${HOME}"/.fzf
 CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
 CUSTOM_GIT_CLONE_URL="${CUSTOM_GIT_BASH_REPO_URL}.git"
+CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 if ! $(is_command_installed "clipboard"); then
 
@@ -265,10 +266,9 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${SUCCESS}
 fi
 
-version="0.3"
-targetVersion="release-${version}"
-print_info 0 "Installing custom-git (v${version})..." 1
-git clone -b "${targetVersion}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
+version="v0.3"
+print_info 0 "Installing custom-git ${version}..." 1
+git clone -b "${version}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
@@ -277,13 +277,21 @@ if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${FAILURE}
 fi
 
+cd "${CUSTOM_GIT_HOME}" || {
+    banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
+    exit ${FAILURE}
+}
+
+git submodule update --init --recursive
+assert_success "Submodule update failed. Please check your network."
+
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
     append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
 done
 
 mucl
-banner_color 0 "magenta" "*" "custom-git (v${version}) installation complete." 2
+banner_color 0 "magenta" "*" "Installation complete - custom-git ${version}" 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
@@ -304,4 +312,4 @@ for shell in "${shells[@]}"; do
 done
 
 print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
