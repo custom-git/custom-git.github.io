@@ -308,7 +308,7 @@ prefix='~/.custom-git'
 
 CUSTOM_GIT_HOME="${HOME}"/.custom-git
 FZF_HOME="${HOME}"/.fzf
-CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
+CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     banner_color_err 0 "custom-git is not installed on your system." 2
@@ -389,7 +389,7 @@ done
 
 mucl
 print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}/get-started" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/get-started" 2
 
 banner_color 0 "magenta" "*" "Update complete - custom-git ${version}" 2
 
