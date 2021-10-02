@@ -217,7 +217,7 @@ function assert_success() {
 
 function get_latest_annotated_tag() {
     git describe --abbrev=0 &> /dev/null
-    if [[ $? -ne SUCCESS ]]; then
+    if [[ $? -ne ${SUCCESS} ]]; then
         echo ""
         return
     fi
