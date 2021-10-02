@@ -266,7 +266,7 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${SUCCESS}
 fi
 
-version="v0.3"
+version="v1.0"
 print_info 0 "Installing custom-git ${version}..." 1
 git clone -b "${version}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."

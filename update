@@ -369,7 +369,7 @@ git pull --quite
 git fetch --all --tags --force --quiet
 assert_success "Fetching custom-git failed. Please check your network."
 
-version="v0.7"
+version="v1.0"
 print_info 0 "Updating - custom-git ${version}..." 1
 git checkout "${version}" &> /dev/null
 assert_success "Switching to new version failed. Please check your network."
