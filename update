@@ -388,6 +388,9 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
+print_info 1 "For more details, visit: " 0
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}/get-started" 2
+
 banner_color 0 "magenta" "*" "Update complete - custom-git ${version}" 2
 
 print_info 0 "Restart your shell or reload config file." 1
@@ -407,6 +410,3 @@ for shell in "${shells[@]}"; do
             ;;
     esac
 done
-
-print_info 1 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}" 2
