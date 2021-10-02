@@ -365,7 +365,8 @@ fi
 
 
 git switch main &> /dev/null
-git pull &> /dev/null
+git pull --quite
+git fetch --all --tags --force --quiet
 assert_success "Fetching custom-git failed. Please check your network."
 
 version="v0.7"
