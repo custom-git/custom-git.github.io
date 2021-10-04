@@ -157,6 +157,15 @@ function assert_success() {
     assert_equal "${status}" ${SUCCESS} "${msg}"
 }
 
+function get_latest_annotated_tag() {
+    git describe --abbrev=0 &> /dev/null
+    if [[ $? -ne ${SUCCESS} ]]; then
+        echo ""
+        return
+    fi
+    git describe --abbrev=0
+}
+
 function install_clipboard() {
 
     if ! $(is_command_installed "npm"); then
@@ -266,9 +275,8 @@ if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
     exit ${SUCCESS}
 fi
 
-version="v1.0"
-print_info 0 "Installing custom-git ${version}..." 1
-git clone -b "${version}" --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
+print_info 0 "Installing custom-git..." 1
+git clone --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
 assert_success "Fetching custom-git failed. Please check your network."
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
@@ -282,7 +290,9 @@ cd "${CUSTOM_GIT_HOME}" || {
     exit ${FAILURE}
 }
 
-git submodule update --init --recursive
+latestVersion="$(get_latest_annotated_tag)"
+git checkout "${latestVersion}" &> /dev/null
+git submodule update --init --recursive &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
 for shell in "${shells[@]}"; do
@@ -294,7 +304,7 @@ mucl
 print_info 1 "For more details, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/get-started" 2
 
-banner_color 0 "magenta" "*" "Installation complete - custom-git ${version}" 2
+banner_color 0 "magenta" "*" "Installation complete - custom-git ${latestVersion}" 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
