@@ -96,12 +96,12 @@ function print_as() {
 
 # Usage: print_info 3 "msg" 2
 function print_info() {
-	print_as ${1} "blue" "[INFO] ${2}" ${3}
+	print_as ${1} "blue" "${2}" ${3}
 }
 
 # Usage: print_err 3 "msg" 2
 function print_err() {
-	print_as ${1} "red" "[ERROR] ${2}" ${3}
+	print_as ${1} "red" "${2}" ${3}
 }
 
 function is_command_installed() {

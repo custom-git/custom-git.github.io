@@ -104,12 +104,12 @@ function print_as() {
 
 # Usage: print_info 3 "msg" 2
 function print_info() {
-	print_as ${1} "blue" "[INFO] ${2}" ${3}
+	print_as ${1} "blue" "${2}" ${3}
 }
 
 # Usage: print_err 3 "msg" 2
 function print_err() {
-	print_as ${1} "red" "[ERROR] ${2}" ${3}
+	print_as ${1} "red" "${2}" ${3}
 }
 
 function is_command_installed() {
@@ -363,23 +363,28 @@ if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
 fi
 ##################################################
 
-
 git switch main &> /dev/null
 git pull --quiet
-git fetch --all --tags --force --quiet
+git fetch --all --tags --prune --prune-tags --quiet     # reference:- https://stackoverflow.com/a/49215190
 assert_success "Fetching custom-git failed. Please check your network."
 
-version="v1.0"
-print_info 0 "Updating - custom-git ${version}..." 1
-git checkout "${version}" &> /dev/null
+latestVersion="$(get_latest_annotated_tag)"
+if [[ "${currVersion}" == "${latestVersion}" ]]; then
+    git checkout "${currVersion}" &> /dev/null
+    print_info 0 "(${currVersion}) Already up to date." 1
+    exit ${SUCCESS}
+fi
+
+print_info 0 "Updating - custom-git ${latestVersion}..." 1
+git checkout "${latestVersion}" &> /dev/null
 assert_success "Switching to new version failed. Please check your network."
 
 git submodule update --init --recursive &> /dev/null
 assert_success "Submodule update failed. Please check your network."
 
 newVersion="$(get_latest_annotated_tag)"
-assert_equal "${newVersion}" "${version}" \
-    "Couldn't update custom-git to ${version}. Unknown error."
+assert_equal "${newVersion}" "${latestVersion}" \
+    "Couldn't update custom-git to ${latestVersion}. Unknown error."
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
@@ -391,7 +396,7 @@ mucl
 print_info 1 "For more details, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/get-started" 2
 
-banner_color 0 "magenta" "*" "Update complete - custom-git ${version}" 2
+banner_color 0 "magenta" "*" "Update complete - custom-git ${latestVersion}" 2
 
 print_info 0 "Restart your shell or reload config file." 1
 for shell in "${shells[@]}"; do
