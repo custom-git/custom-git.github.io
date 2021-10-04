@@ -297,7 +297,7 @@ done
 
 remove_dir "${CUSTOM_GIT_HOME}"
 
-print_info 0 "For more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/get-started" 2
+print_info 1 "For more details, visit: " 0
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
 
-banner_color 1 "red" "#" "custom-git uninstalled." 2
+banner_color 0 "red" "#" "custom-git uninstalled." 2
