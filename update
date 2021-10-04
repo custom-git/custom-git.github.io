@@ -365,7 +365,7 @@ fi
 
 git switch main &> /dev/null
 git pull --quiet
-git fetch --all --tags --prune --prune-tags --quiet     # reference:- https://stackoverflow.com/a/49215190
+git fetch --all --tags --prune --prune-tags --force --quiet     # reference:- https://stackoverflow.com/a/49215190
 assert_success "Fetching custom-git failed. Please check your network."
 
 latestVersion="$(get_latest_annotated_tag)"
