@@ -400,7 +400,7 @@ banner_color 0 "magenta" "*" "update complete - custom-git ${latestVersion}" 1
 print_info 0 "to view the updates, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}/releases" 1
 
-print_info 1 "to apply the updates, restart your shell session or reload the config file with:" 1
+print_info 1 "to apply the updates, restart your shell session or reload the config file with:" 2
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)

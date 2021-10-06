@@ -304,7 +304,7 @@ banner_color 0 "magenta" "*" "installation complete - custom-git ${latestVersion
 print_info 0 "to browse the custom-git features, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/explorer" 1
 
-print_info 1 "to enable custom-git, restart your shell session or reload the config file with:" 1
+print_info 1 "to enable custom-git, restart your shell session or reload the config file with:" 2
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
