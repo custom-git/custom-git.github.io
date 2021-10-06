@@ -228,46 +228,46 @@ function get_latest_annotated_tag() {
 function install_clipboard() {
 
     if ! $(is_command_installed "npm"); then
-        banner_color_err 1 "npm not installed." 2
+        banner_color_err 1 "npm not installed." 1
         return ${FAILURE}
     fi
-    print_info 0 "installing clipboard-cli ..." 1
+    print_info 1 "installing clipboard-cli ..." 1
     npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
         mucl 1
-        banner_color 0 "black" "~" "couldn't install clipboard-cli" 2
+        banner_color 0 "black" "~" "couldn't install clipboard-cli" 1
         return ${FAILURE}
     fi
     mucl 1
-    banner_color 0 "magenta" "*" "clipboard-cli installed" 2
+    banner_color 0 "magenta" "*" "clipboard-cli installed" 1
 }
 
 function install_fzf() {
 
-    print_info 0 "installing fzf ..." 1
+    print_info 1 "installing fzf ..." 1
 
     git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "couldn't fetch fzf! please check your network" 2
+        banner_color_err 0 "couldn't fetch fzf! please check your network" 1
         return ${FAILURE}
     fi
 
     cd "${FZF_HOME}" || {
         mucl
-        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 2
+        banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 1
         return ${FAILURE}
     }
     ./install --all &> /dev/null
 
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "fzf installation failed" 2
+        banner_color_err 0 "fzf installation failed" 1
         return ${FAILURE}
     fi
 
     mucl
-    banner_color 0 "magenta" "*" "fzf installed" 2
+    banner_color 0 "magenta" "*" "fzf installed" 1
 }
 
 function handle_v0.1.0_install_issue() {
@@ -302,8 +302,6 @@ trap finish EXIT
 # Update custom-git #
 #####################
 
-insert_new_lines 1
-
 shells=("bash" "zsh")
 numShells=${#shells[@]}
 
@@ -326,6 +324,7 @@ prefix='~/.custom-git'
 
 CUSTOM_GIT_HOME="${HOME}"/.custom-git
 FZF_HOME="${HOME}"/.fzf
+CUSTOM_GIT_BASH_REPO_URL="https://github.com/custom-git/custom-git-bash"
 CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
@@ -342,7 +341,9 @@ if ! $(is_command_installed "clipboard"); then
     if (( $? != SUCCESS )); then
         print_info 0 "please install clipboard-cli from " 0
         print_as 0 "magenta" "bold" "https://github.com/sindresorhus/clipboard-cli#install" 1
-        print_info 0 "some custom-git features will not work without it" 2
+        print_info 0 "some custom-git features will not work without it" 1
+        print_info 0 "for more details, visit: " 0
+        print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/explorer/show/commit-logs" 1
     fi
 fi
 
@@ -377,7 +378,7 @@ if [[ "${currVersion}" == "${latestVersion}" ]]; then
     exit ${SUCCESS}
 fi
 
-print_info 0 "updating - custom-git ${latestVersion}..." 1
+print_info 1 "updating - custom-git ${latestVersion}..." 1
 git checkout "${latestVersion}" &> /dev/null
 assert_success "couldn't switch to new version! please check your network"
 
@@ -395,12 +396,11 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-print_info 0 "for more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
-
 banner_color 0 "magenta" "*" "update complete - custom-git ${latestVersion}" 2
+print_info 0 "to view the updates, visit: " 0
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}/releases" 1
 
-print_info 0 "restart your shell or reload config file" 1
+print_info 1 "restart your shell or reload config file" 1
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)

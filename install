@@ -172,7 +172,7 @@ function install_clipboard() {
         banner_color_err 1 "npm not installed" 1
         return ${FAILURE}
     fi
-    print_info 0 "installing clipboard-cli ..." 1
+    print_info 1 "installing clipboard-cli ..." 1
     npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
         mucl 1
@@ -302,9 +302,9 @@ done
 mucl
 banner_color 0 "magenta" "*" "installation complete - custom-git ${latestVersion}" 2
 print_info 0 "to browse custom-git features, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/explorer" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/explorer" 1
 
-print_info 0 "restart your shell or reload config file" 1
+print_info 1 "restart your shell or reload config file" 1
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
