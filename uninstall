@@ -301,6 +301,6 @@ done
 
 remove_dir "${CUSTOM_GIT_HOME}"
 
-banner_color 0 "red" "#" "custom-git uninstalled." 1
+banner_color 1 "red" "#" "custom-git uninstalled." 1
 print_info 0 "to re-install, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/setup#-install" 2
