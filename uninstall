@@ -183,7 +183,7 @@ function remove_line() {
         line_no=$(( $(sed 's/:.*//' <<< "$line") + line_no - 1 ))
         content=$(sed 's/^[0-9]*://' <<< "$line")
         match=1
-        echo    "  - Line #$line_no: $content"
+        echo    "  - line #$line_no: $content"
         [ "$content" = "$1" ] || ask "    - remove?"
         if [ $? -eq 0 ]; then
             awk -v n=$line_no 'NR == n {next} {print}' "$src" > "$src.bak" &&
@@ -301,7 +301,6 @@ done
 
 remove_dir "${CUSTOM_GIT_HOME}"
 
-print_info 1 "for more details, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
-
-banner_color 0 "red" "#" "custom-git uninstalled." 2
+banner_color 0 "red" "#" "custom-git uninstalled." 1
+print_info 0 "to re-install, visit: " 0
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/setup#-install" 2
