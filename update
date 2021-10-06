@@ -396,7 +396,7 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-banner_color 0 "magenta" "*" "update complete - custom-git ${latestVersion}" 2
+banner_color 0 "magenta" "*" "update complete - custom-git ${latestVersion}" 1
 print_info 0 "to view the updates, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_BASH_REPO_URL}/releases" 1
 
