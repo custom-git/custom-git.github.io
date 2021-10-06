@@ -6,6 +6,7 @@
 #shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional).
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
 #shellcheck disable=SC2181      # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
+#shellcheck disable=SC2155      # Declare and assign separately to avoid masking return values.
 
 ##################
 # util functions #
@@ -75,9 +76,9 @@ function banner_color() {
     insert_new_lines ${5}
 }
 
-# Usage: banner_color_err 1 "error msg" 2
+# Usage: banner_color_err 1 "error message" 2
 function banner_color_err() {
-    banner_color ${1} "red" "~" "[ERROR] ${2}" ${3}
+    banner_color ${1} "red" "~" "[error] ${2}" ${3}
 }
 
 # Usage: print_as 3 "blue" "msg" 1
@@ -147,7 +148,7 @@ function append_line() {
 function remove_file() {
     local file="${1}"
     [ -f "${file}" ] && {
-        print_info 0 "Remove ${file}" 1
+        print_info 0 "removing ${file}" 1
         rm -f "${file}"
     }
 }
@@ -155,7 +156,7 @@ function remove_file() {
 function remove_dir() {
     local dir="${1}"
     [ -d "${dir}" ] && {
-        print_info 0 "Remove ${dir}" 1
+        print_info 0 "removing ${dir}" 1
         rm -rf "${dir}"
     }
 }
@@ -163,10 +164,10 @@ function remove_dir() {
 function remove_line() {
     src=$(readlink "$1")
     if [ $? -eq 0 ]; then
-        print_info 0 "Remove from ${1} ($src):" 1
+        print_info 0 "removing from ${1} ($src):" 1
     else
         src=$1
-        print_info 0 "Remove from ${1}:" 1
+        print_info 0 "removing from ${1}:" 1
     fi
 
     shift
@@ -183,17 +184,17 @@ function remove_line() {
         content=$(sed 's/^[0-9]*://' <<< "$line")
         match=1
         echo    "  - Line #$line_no: $content"
-        [ "$content" = "$1" ] || ask "    - Remove?"
+        [ "$content" = "$1" ] || ask "    - remove?"
         if [ $? -eq 0 ]; then
             awk -v n=$line_no 'NR == n {next} {print}' "$src" > "$src.bak" &&
             mv "$src.bak" "$src" || break
-            echo  "      - Removed"
+            echo  "      - removed"
         else
-            echo  "      - Skipped"
+            echo  "      - skipped"
             line_no=$(( line_no + 1 ))
         fi
     done
-    [ $match -eq 0 ] && echo "  - Nothing found"
+    [ $match -eq 0 ] && echo "  - nothing found"
     echo
 }
 
@@ -224,9 +225,24 @@ function get_latest_annotated_tag() {
     git describe --abbrev=0
 }
 
+function handle_v0.1.0_install_issue() {
+    local currVersion="$(get_latest_annotated_tag)"
+    if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
+        for shell in "${shells[@]}"; do
+            local initFile="${CUSTOM_GIT_HOME}.${shell}"
+            [ -f "${initFile}" ] && {
+                remove_file "${initFile}"
+                remove_line ~/.${shell}rc \
+                    "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
+                    "source ${prefix}.${shell}"
+            }
+        done
+    fi
+}
+
 function finish {
     cd "${currDir}" || {
-        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        banner_color_err 0 "couldn't enter the directory: ${currDir}" 2
         exit ${FAILURE}
     }
 }
@@ -239,12 +255,12 @@ trap finish EXIT
 insert_new_lines 1
 
 CUSTOM_GIT_HOME="${HOME}"/.custom-git
+CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
-    banner_color_err 0 "custom-git is not installed on your system." 2
-    print_info 0 "Visit " 0
-    print_as 0 "magenta" "bold" "https://custom-git.io" 0
-    print_as 0 "blue" " for more details." 2
+    banner_color_err 0 "custom-git is not installed on your system" 2
+    print_info 0 "for more details, visit: " 0
+    print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
     exit ${FAILURE}
 fi
 
@@ -259,33 +275,21 @@ for ((i = 0 ; i < numShells ; i++)); do
 done
 
 if [[ ${#shells[@]} -eq 0 ]]; then
-    banner_color_err 0 "custom-git is only supported for bash and zsh shells. Stopping uninstallation." 2
-    print_info 0 "Visit " 0
-    print_as 0 "magenta" "bold" "https://custom-git.io" 0
-    print_as 0 "blue" " for more information." 2
+    banner_color_err 0 "custom-git is only supported for bash and zsh shells" 2
+    print_info 0 "for more details, visit: " 0
+    print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
     exit ${FAILURE}
 fi
 
 prefix='~/.custom-git'
-CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 cd "${CUSTOM_GIT_HOME}" || {
-    banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
+    banner_color_err 0 "couldn't enter the directory: ${CUSTOM_GIT_HOME}" 2
     exit ${FAILURE}
 }
 
-currVersion="$(get_latest_annotated_tag)"
-if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
-    for shell in "${shells[@]}"; do
-        initFile="${CUSTOM_GIT_HOME}.${shell}"
-        [ -f "${initFile}" ] && {
-            remove_file "${initFile}"
-            remove_line ~/.${shell}rc \
-                "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
-                "source ${prefix}.${shell}"
-        }
-    done
-fi
+handle_v0.1.0_install_issue
+
 for shell in "${shells[@]}"; do
     initFile="${HOME}/.${shell}rc"
     [ -f "${initFile}" ] && {
@@ -297,7 +301,7 @@ done
 
 remove_dir "${CUSTOM_GIT_HOME}"
 
-print_info 1 "For more details, visit: " 0
+print_info 1 "for more details, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
 
 banner_color 0 "red" "#" "custom-git uninstalled." 2

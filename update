@@ -156,7 +156,7 @@ function append_line() {
 function remove_file() {
     local file="${1}"
     [ -f "${file}" ] && {
-        print_info 0 "remove ${file}" 1
+        print_info 0 "removing ${file}" 1
         rm -f "${file}"
     }
 }
@@ -164,10 +164,10 @@ function remove_file() {
 function remove_line() {
     src=$(readlink "$1")
     if [ $? -eq 0 ]; then
-        print_info 0 "remove from ${1} ($src):" 1
+        print_info 0 "removing from ${1} ($src):" 1
     else
         src=$1
-        print_info 0 "remove from ${1}:" 1
+        print_info 0 "removing from ${1}:" 1
     fi
 
     shift
