@@ -84,9 +84,9 @@ function banner_color() {
     insert_new_lines ${5}
 }
 
-# Usage: banner_color_err 1 "error msg" 2
+# Usage: banner_color_err 1 "error message" 2
 function banner_color_err() {
-    banner_color ${1} "red" "~" "[Error] ${2}" ${3}
+    banner_color ${1} "red" "~" "[error] ${2}" ${3}
 }
 
 # Usage: print_as 3 "blue" "msg" 1
@@ -231,16 +231,15 @@ function install_clipboard() {
         banner_color_err 1 "npm not installed." 2
         return ${FAILURE}
     fi
-
     print_info 0 "installing clipboard-cli ..." 1
     npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
         mucl 1
-        banner_color 0 "black" "~" "clipboard-cli installation failed." 2
+        banner_color 0 "black" "~" "couldn't install clipboard-cli" 2
         return ${FAILURE}
     fi
     mucl 1
-    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+    banner_color 0 "magenta" "*" "clipboard-cli installed" 2
 }
 
 function install_fzf() {
@@ -263,12 +262,12 @@ function install_fzf() {
 
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "fzf installation failed." 2
+        banner_color_err 0 "fzf installation failed" 2
         return ${FAILURE}
     fi
 
     mucl
-    banner_color 0 "magenta" "*" "fzf installed." 2
+    banner_color 0 "magenta" "*" "fzf installed" 2
 }
 
 function handle_v0.1.0_install_issue() {
@@ -293,7 +292,7 @@ function handle_v0.1.0_install_issue() {
 
 function finish {
     cd "${currDir}" || {
-        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        print_info 0 "couldn't enter the directory: ${currDir}" 2
         exit ${FAILURE}
     }
 }
@@ -342,8 +341,8 @@ if ! $(is_command_installed "clipboard"); then
     install_clipboard
     if (( $? != SUCCESS )); then
         print_info 0 "please install clipboard-cli from " 0
-        print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
-        print_info 0 "some custom-git features will not work without it." 2
+        print_as 0 "magenta" "bold" "https://github.com/sindresorhus/clipboard-cli#install" 1
+        print_info 0 "some custom-git features will not work without it" 2
     fi
 fi
 
@@ -418,3 +417,5 @@ for shell in "${shells[@]}"; do
             ;;
     esac
 done
+
+echo

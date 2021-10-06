@@ -82,9 +82,9 @@ function banner_color() {
     insert_new_lines ${5}
 }
 
-# Usage: banner_color_err 1 "error msg" 2
+# Usage: banner_color_err 1 "error message" 2
 function banner_color_err() {
-    banner_color ${1} "red" "~" "[ERROR] ${2}" ${3}
+    banner_color ${1} "red" "~" "[error] ${2}" ${3}
 }
 
 # Usage: print_as 3 "blue" "msg" 1
@@ -172,26 +172,25 @@ function install_clipboard() {
         banner_color_err 1 "npm not installed." 2
         return ${FAILURE}
     fi
-    print_info 0 "Installing clipboard-cli ..." 1
-    sudo npm install -g clipboard-cli &> /dev/null
+    print_info 0 "installing clipboard-cli ..." 1
+    npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
-        mucl 2
-        banner_color_err 0 "clipboard-cli installation failed." 2
+        mucl 1
+        banner_color 0 "black" "~" "couldn't install clipboard-cli" 2
         return ${FAILURE}
     fi
-
-    mucl 2
-    banner_color 0 "magenta" "*" "clipboard-cli installed." 2
+    mucl 1
+    banner_color 0 "magenta" "*" "clipboard-cli installed" 2
 }
 
 function install_fzf() {
 
-    print_info 0 "Installing fzf ..." 1
+    print_info 0 "installing fzf ..." 1
 
     git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "Fetching fzf failed. Please check your network." 2
+        banner_color_err 0 "couldn't fetch fzf! please check your network" 2
         return ${FAILURE}
     fi
 
@@ -204,17 +203,17 @@ function install_fzf() {
 
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "fzf installation failed." 2
+        banner_color_err 0 "fzf installation failed" 2
         return ${FAILURE}
     fi
 
     mucl
-    banner_color 0 "magenta" "*" "fzf installed." 2
+    banner_color 0 "magenta" "*" "fzf installed" 2
 }
 
 function finish {
     cd "${currDir}" || {
-        banner_color_err 0 "couldn't enter directory: ${currDir}" 2
+        print_info 0 "couldn't enter the directory: ${currDir}" 2
         exit ${FAILURE}
     }
 }
@@ -237,7 +236,7 @@ for ((i = 0 ; i < numShells ; i++)); do
 done
 
 if [[ ${#shells[@]} -eq 0 ]]; then
-    print_err 0 "custom-git is only supported for bash and zsh shells. Stopping installation." 2
+    print_err 0 "custom-git is only supported for bash and zsh shells" 2
     exit ${FAILURE}
 fi
 
@@ -253,9 +252,9 @@ if ! $(is_command_installed "clipboard"); then
 
     install_clipboard
     if (( $? != SUCCESS )); then
-        print_info 0 "Please install clipboard-cli from " 0
-        print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
-        print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+        print_info 0 "please install clipboard-cli from " 0
+        print_as 0 "magenta" "bold" "https://github.com/sindresorhus/clipboard-cli#install" 1
+        print_info 0 "some custom-git features will not work without it" 2
     fi
 fi
 
@@ -263,7 +262,7 @@ if ! $(is_command_installed "fzf"); then
 
     install_fzf
     if (( $? != SUCCESS )); then
-        print_info 0 "Please install fzf from " 0
+        print_info 0 "please install fzf from " 0
         print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 1
         print_as 0 "blue" "and try again..." 2
         exit ${FAILURE}
@@ -271,29 +270,29 @@ if ! $(is_command_installed "fzf"); then
 fi
 
 if [[ -d "${CUSTOM_GIT_HOME}" ]]; then
-    print_info 0 "custom-git is already installed on your system." 2
+    print_info 0 "custom-git is already installed on your system" 2
     exit ${SUCCESS}
 fi
 
-print_info 0 "Installing custom-git..." 1
+print_info 0 "installing custom-git..." 1
 git clone --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &> /dev/null
-assert_success "Fetching custom-git failed. Please check your network."
+assert_success "couldn't fetch custom-git! please check your network"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     mucl
-    banner_color_err 0 "$(printf "Couldn't create the directory %s. Exiting." "${prefix}")" 2
+    banner_color_err 0 "$(printf "installation failure! couldn't create the directory %s" "${prefix}")" 2
     exit ${FAILURE}
 fi
 
 cd "${CUSTOM_GIT_HOME}" || {
-    banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
+    banner_color_err 0 "installation failure! couldn't enter the directory: ${CUSTOM_GIT_HOME}" 2
     exit ${FAILURE}
 }
 
 latestVersion="$(get_latest_annotated_tag)"
 git checkout "${latestVersion}" &> /dev/null
 git submodule update --init --recursive &> /dev/null
-assert_success "Submodule update failed. Please check your network."
+assert_success "couldn't update submodule! please check your network"
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
@@ -301,25 +300,25 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-print_info 0 "For more details, visit: " 0
+print_info 0 "for more details, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
 
-banner_color 0 "magenta" "*" "Installation complete - custom-git ${latestVersion}" 2
+banner_color 0 "magenta" "*" "installation complete - custom-git ${latestVersion}" 2
 
-print_info 0 "Restart your shell or reload config file." 1
+print_info 0 "restart your shell or reload config file" 1
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
-            printf "   source ~/.bashrc  # bash"
+            printf "$ source ~/.bashrc  # bash shell"
             archi=$(uname -sm)
             [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
             echo
             ;;
         zsh)
-            echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+            echo "$ source ${ZDOTDIR:-~}/.zshrc   # zsh shell"
             ;;
         *)
-            printf "\n   %s shell is not supported.\n" "${shell}"
+            printf "\n%s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
