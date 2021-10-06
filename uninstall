@@ -303,4 +303,24 @@ remove_dir "${CUSTOM_GIT_HOME}"
 
 banner_color 1 "red" "#" "custom-git uninstalled." 1
 print_info 0 "to re-install, visit: " 0
-print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/setup#-install" 2
+print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/setup#-install" 1
+
+print_info 1 "to disable custom-git, restart your shell session or reload the config file with the following command:" 1
+for shell in "${shells[@]}"; do
+    case "${shell}" in
+        bash)
+            printf "$ source ~/.bashrc  # bash shell"
+            archi=$(uname -sm)
+            [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
+            echo
+            ;;
+        zsh)
+            echo "$ source ${ZDOTDIR:-~}/.zshrc   # zsh shell"
+            ;;
+        *)
+            printf "\n%s shell is not supported.\n" "${shell}"
+            ;;
+    esac
+done
+
+echo
