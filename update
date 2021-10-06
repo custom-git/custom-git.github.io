@@ -7,6 +7,7 @@
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting.
 #shellcheck disable=SC2181      # Check exit code directly with e.g. 'if mycmd;', not indirectly with $?.
 #shellcheck disable=SC2119      # Use mucl "$@" if function's $1 should mean script's $1
+#shellcheck disable=SC2155      # Declare and assign separately to avoid masking return values.
 
 ##################
 # util functions #
@@ -85,7 +86,7 @@ function banner_color() {
 
 # Usage: banner_color_err 1 "error msg" 2
 function banner_color_err() {
-    banner_color ${1} "red" "~" "[ERROR] ${2}" ${3}
+    banner_color ${1} "red" "~" "[Error] ${2}" ${3}
 }
 
 # Usage: print_as 3 "blue" "msg" 1
@@ -155,7 +156,7 @@ function append_line() {
 function remove_file() {
     local file="${1}"
     [ -f "${file}" ] && {
-        print_info 0 "Remove ${file}" 1
+        print_info 0 "remove ${file}" 1
         rm -f "${file}"
     }
 }
@@ -163,10 +164,10 @@ function remove_file() {
 function remove_line() {
     src=$(readlink "$1")
     if [ $? -eq 0 ]; then
-        print_info 0 "Remove from ${1} ($src):" 1
+        print_info 0 "remove from ${1} ($src):" 1
     else
         src=$1
-        print_info 0 "Remove from ${1}:" 1
+        print_info 0 "remove from ${1}:" 1
     fi
 
     shift
@@ -182,18 +183,18 @@ function remove_line() {
         line_no=$(( $(sed 's/:.*//' <<< "$line") + line_no - 1 ))
         content=$(sed 's/^[0-9]*://' <<< "$line")
         match=1
-        echo "  - Line #$line_no: $content"
-        [ "$content" = "$1" ] || ask "    - Remove?"
+        echo "  - line #$line_no: $content"
+        [ "$content" = "$1" ] || ask "    - remove?"
         if [ $? -eq 0 ]; then
             awk -v n=$line_no 'NR == n {next} {print}' "$src" > "$src.bak" &&
             mv "$src.bak" "$src" || break
-            echo  "      - Removed"
+            echo  "      - removed"
         else
-            echo  "      - Skipped"
+            echo  "      - skipped"
             line_no=$(( line_no + 1 ))
         fi
     done
-    [ $match -eq 0 ] && echo "  - Nothing found"
+    [ $match -eq 0 ] && echo "  - nothing found"
     echo
 }
 
@@ -217,7 +218,7 @@ function assert_success() {
 
 function get_latest_annotated_tag() {
     git describe --abbrev=0 &> /dev/null
-    if [[ $? -ne ${SUCCESS} ]]; then
+    if (( $? != SUCCESS )); then    # there are no tags
         echo ""
         return
     fi
@@ -231,27 +232,25 @@ function install_clipboard() {
         return ${FAILURE}
     fi
 
-    print_info 0 "Installing clipboard-cli ..." 1
-    sudo npm install -g clipboard-cli &> /dev/null
-
+    print_info 0 "installing clipboard-cli ..." 1
+    npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
-        mucl 2
-        banner_color_err 0 "clipboard-cli installation failed." 2
+        mucl 1
+        banner_color 0 "black" "~" "clipboard-cli installation failed." 2
         return ${FAILURE}
     fi
-
-    mucl 2
+    mucl 1
     banner_color 0 "magenta" "*" "clipboard-cli installed." 2
 }
 
 function install_fzf() {
 
-    print_info 0 "Installing fzf ..." 1
+    print_info 0 "installing fzf ..." 1
 
     git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
     if (( $? != SUCCESS )); then
         mucl
-        banner_color_err 0 "Fetching fzf failed. Please check your network." 2
+        banner_color_err 0 "couldn't fetch fzf! please check your network" 2
         return ${FAILURE}
     fi
 
@@ -270,6 +269,26 @@ function install_fzf() {
 
     mucl
     banner_color 0 "magenta" "*" "fzf installed." 2
+}
+
+function handle_v0.1.0_install_issue() {
+    local currVersion="$(get_latest_annotated_tag)"
+    if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
+        for shell in "${shells[@]}"; do
+            local initFile="${CUSTOM_GIT_HOME}.${shell}"
+            [ -f "${initFile}" ] && {
+                remove_file "${initFile}"
+                remove_line ~/.${shell}rc \
+                    "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
+                    "source ${prefix}.${shell}"
+            }
+        done
+        local clone_depth=$(git rev-list --count --all)
+        if (( clone_depth == 1 )); then
+            git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+            git fetch --unshallow &> /dev/null
+        fi
+    fi
 }
 
 function finish {
@@ -297,8 +316,8 @@ for ((i = 0 ; i < numShells ; i++)); do
 done
 
 if [[ ${#shells[@]} -eq 0 ]]; then
-    banner_color_err 0 "custom-git is only supported for bash and zsh shells. Stopping updation." 2
-    print_info 0 "Visit " 0
+    banner_color_err 0 "custom-git is only supported for bash and zsh shells" 2
+    print_info 0 "visit " 0
     print_as 0 "magenta" "bold" "https://custom-git.io" 0
     print_as 0 "blue" " for more information." 2
     exit ${FAILURE}
@@ -312,9 +331,9 @@ CUSTOM_GIT_WEBSITE_URL="https://custom-git.io"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
     banner_color_err 0 "custom-git is not installed on your system." 2
-    print_info 0 "Visit " 0
+    print_info 0 "visit " 0
     print_as 0 "magenta" "bold" "https://custom-git.io" 0
-    print_as 0 "blue" " for easy installation." 2
+    print_as 0 "blue" " for quick installation." 2
     exit ${FAILURE}
 fi
 
@@ -322,9 +341,9 @@ if ! $(is_command_installed "clipboard"); then
 
     install_clipboard
     if (( $? != SUCCESS )); then
-        print_info 0 "Please install clipboard-cli from " 0
+        print_info 0 "please install clipboard-cli from " 0
         print_as 0 "magenta" "bold" "\"https://github.com/sindresorhus/clipboard-cli\"" 1
-        print_info 0 "Otherwise, some custom-git commands may not work correctly." 2
+        print_info 0 "some custom-git features will not work without it." 2
     fi
 fi
 
@@ -332,59 +351,43 @@ if ! $(is_command_installed "fzf"); then
 
     install_fzf
     if (( $? != SUCCESS )); then
-        print_info 0 "Please try again after installing fzf from " 0
+        print_info 0 "please try again after installing fzf from " 0
         print_as 0 "magenta" "bold" "https://github.com/junegunn/fzf#installation" 2
         exit ${FAILURE}
     fi
 fi
 
 cd "${CUSTOM_GIT_HOME}" || {
-    banner_color_err 0 "couldn't enter directory: ${CUSTOM_GIT_HOME}" 2
+    banner_color_err 0 "update failure! couldn't enter the directory: ${CUSTOM_GIT_HOME}" 2
     exit ${FAILURE}
 }
 
-########## handle v0.1.0 install issues ##########
+handle_v0.1.0_install_issue
+
 currVersion="$(get_latest_annotated_tag)"
-if [[ "${currVersion}" == "" || "${currVersion}" == "v0.1.0" ]]; then
-    for shell in "${shells[@]}"; do
-        initFile="${CUSTOM_GIT_HOME}.${shell}"
-        [ -f "${initFile}" ] && {
-            remove_file "${initFile}"
-            remove_line ~/.${shell}rc \
-                "[ -f ${prefix}.${shell} ] && source ${prefix}.${shell}" \
-                "source ${prefix}.${shell}"
-        }
-    done
-    clone_depth=$(git rev-list --count --all)
-    if [[ ${clone_depth} -eq 1 ]]; then
-        git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
-        git fetch --unshallow &> /dev/null
-    fi
-fi
-##################################################
 
 git switch main &> /dev/null
 git pull --quiet
 git fetch --all --tags --prune --prune-tags --force --quiet     # reference:- https://stackoverflow.com/a/49215190
-assert_success "Fetching custom-git failed. Please check your network."
+assert_success "couldn't fetch custom-git! please check your network"
 
 latestVersion="$(get_latest_annotated_tag)"
 if [[ "${currVersion}" == "${latestVersion}" ]]; then
     git checkout "${currVersion}" &> /dev/null
-    print_info 0 "(${currVersion}) Already up to date." 1
+    print_info 0 "(${currVersion}) already up to date" 1
     exit ${SUCCESS}
 fi
 
-print_info 0 "Updating - custom-git ${latestVersion}..." 1
+print_info 0 "updating - custom-git ${latestVersion}..." 1
 git checkout "${latestVersion}" &> /dev/null
-assert_success "Switching to new version failed. Please check your network."
+assert_success "couldn't switch to new version! please check your network"
 
 git submodule update --init --recursive &> /dev/null
-assert_success "Submodule update failed. Please check your network."
+assert_success "couldn't update submodule! please check your network"
 
 newVersion="$(get_latest_annotated_tag)"
 assert_equal "${newVersion}" "${latestVersion}" \
-    "Couldn't update custom-git to ${latestVersion}. Unknown error."
+    "couldn't update custom-git to ${latestVersion}! unknown error"
 
 for shell in "${shells[@]}"; do
     [ $shell = zsh ] && dest=${ZDOTDIR:-~}/.zshrc || dest=~/.bashrc
@@ -393,25 +396,25 @@ for shell in "${shells[@]}"; do
 done
 
 mucl
-print_info 1 "For more details, visit: " 0
+print_info 0 "for more details, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}" 2
 
-banner_color 0 "magenta" "*" "Update complete - custom-git ${latestVersion}" 2
+banner_color 0 "magenta" "*" "update complete - custom-git ${latestVersion}" 2
 
-print_info 0 "Restart your shell or reload config file." 1
+print_info 0 "restart your shell or reload config file" 1
 for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
-            printf "   source ~/.bashrc  # bash"
+            printf "$ source ~/.bashrc  # bash shell"
             archi=$(uname -sm)
             [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
             echo
             ;;
         zsh)
-            echo "   source ${ZDOTDIR:-~}/.zshrc   # zsh"
+            echo "$ source ${ZDOTDIR:-~}/.zshrc   # zsh shell"
             ;;
         *)
-            printf "\n   %s shell is not supported.\n" "${shell}"
+            printf "\n%s shell is not supported.\n" "${shell}"
             ;;
     esac
 done
