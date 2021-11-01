@@ -5,7 +5,6 @@
 #shellcheck disable=SC2053      # Quote the right-hand side of != in [[ ]] to prevent glob matching
 #shellcheck disable=SC2091      # Remove surrounding $() to avoid executing output (or use eval if intentional)
 #shellcheck disable=SC2086      # Double quote to prevent globbing and word splitting
-#shellcheck disable=SC2120      # mucl references arguments, but none are ever passed
 
 ##################
 # util functions #
@@ -17,13 +16,13 @@ FAILURE=1
 MOVE_UP=$(tput cuu 1)
 CLEAR_LINE=$(tput el 1)
 
-function mucl() {
-    if [[ $# -eq 0 ]]; then
-        numIterations=1
-    else
-        numIterations=${1}
-    fi
-    for (( i = 0; i < numIterations; i++)); do
+archi=$(uname -sm)
+
+# Usage: clear_last_n_lines n
+# param: n number of lines to clear from the cursor
+function clear_last_n_lines() {
+    local numIterations=${1}
+    for (( i = 0; i < numIterations; i++ )); do
         echo "${MOVE_UP}${CLEAR_LINE}${MOVE_UP}"
     done
 }
@@ -144,7 +143,7 @@ function assert_equal() {
 
     local A="${1}" B="${2}" msg="${3}"
     [[ "${A}" != "${B}" ]] && {
-        mucl
+        clear_last_n_lines 1
         banner_color_err 0 "${msg}" 2
         exit ${FAILURE}
     }
@@ -175,12 +174,44 @@ function install_clipboard() {
     print_info 1 "installing clipboard-cli ..." 1
     npm install -g clipboard-cli &> /dev/null
     if (( $? != SUCCESS )); then
-        mucl 1
+        clear_last_n_lines 1
         banner_color 0 "black" "~" "couldn't install clipboard-cli" 1
         return ${FAILURE}
     fi
-    mucl 1
+    clear_last_n_lines 1
     banner_color 0 "magenta" "*" "clipboard-cli installed" 1
+}
+
+function install_delta() {
+
+    if [[ ! "${archi}" =~ Darwin ]]; then
+        return ${FAILURE}
+    fi
+    if ! $(is_command_installed "brew"); then
+        banner_color 1 "black" "~" "brew not installed" 1
+        return ${FAILURE}
+    fi
+    print_info 1 "installing delta ..." 1
+    brew install git-delta &> /dev/null
+    if (( $? != SUCCESS )); then
+        clear_last_n_lines 1
+        banner_color 0 "black" "~" "couldn't install delta" 1
+        return ${FAILURE}
+    fi
+
+    # delta config settings
+    git config --global core.pager delta
+    git config --global delta.navigate true
+    git config --global delta.syntax-theme GitHub
+    git config --global delta.line-numbers true
+    git config --global delta.whitespace-error-style "red reverse"
+    git config --global delta.commit-decoration-style "blue box ul"
+    git config --global delta.file-style "blue bold ul"
+    git config --global delta.file-decoration-style none
+
+    git config --global color.diff.commit blue
+
+    return ${SUCCESS}
 }
 
 function install_fzf() {
@@ -189,25 +220,25 @@ function install_fzf() {
 
     git clone --depth 1 https://github.com/junegunn/fzf.git "${FZF_HOME}" &> /dev/null
     if (( $? != SUCCESS )); then
-        mucl
+        clear_last_n_lines 1
         banner_color_err 0 "couldn't fetch fzf! please check your network" 1
         return ${FAILURE}
     fi
 
     cd "${FZF_HOME}" || {
-        mucl
+        clear_last_n_lines 1
         banner_color_err 0 "couldn't enter directory: ${FZF_HOME}" 1
         return ${FAILURE}
     }
     ./install --all &> /dev/null
 
     if (( $? != SUCCESS )); then
-        mucl
+        clear_last_n_lines 1
         banner_color_err 0 "fzf installation failed" 1
         return ${FAILURE}
     fi
 
-    mucl
+    clear_last_n_lines 1
     banner_color 0 "magenta" "*" "fzf installed" 1
 }
 
@@ -258,6 +289,16 @@ if ! $(is_command_installed "clipboard"); then
     fi
 fi
 
+if ! $(is_command_installed "delta"); then
+
+    install_delta
+    if (( $? != SUCCESS )); then
+        print_info 0 "please install delta from " 0
+        print_as 0 "magenta" "bold" "https://github.com/dandavison/delta#installation" 1
+        print_info 0 "delta is a syntax-highlighting pager for git" 1
+    fi
+fi
+
 if ! $(is_command_installed "fzf"); then
 
     install_fzf
@@ -279,7 +320,7 @@ git clone --recurse-submodules "${CUSTOM_GIT_CLONE_URL}" "${CUSTOM_GIT_HOME}" &>
 assert_success "couldn't fetch custom-git! please check your network"
 
 if [[ ! -d "${CUSTOM_GIT_HOME}" ]]; then
-    mucl
+    clear_last_n_lines 1
     banner_color_err 0 "installation failure! couldn't create the directory ${prefix}" 2
     exit ${FAILURE}
 fi
@@ -299,7 +340,7 @@ for shell in "${shells[@]}"; do
     append_line "[ -f ${prefix}/init.${shell} ] && source ${prefix}/init.${shell}" "$dest" "source ${prefix}/init.${shell}"
 done
 
-mucl
+clear_last_n_lines 1
 banner_color 0 "magenta" "*" "installation complete - custom-git ${latestVersion}" 1
 print_info 0 "to browse the custom-git features, visit: " 0
 print_as 0 "magenta" "bold" "${CUSTOM_GIT_WEBSITE_URL}/explorer" 1
@@ -309,7 +350,6 @@ for shell in "${shells[@]}"; do
     case "${shell}" in
         bash)
             printf "$ source ~/.bashrc  # bash shell"
-            archi=$(uname -sm)
             [[ "$archi" =~ Darwin ]] && printf "  (~/.bashrc should be sourced from ~/.bash_profile)"
             echo
             ;;
