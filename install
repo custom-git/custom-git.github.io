@@ -199,6 +199,9 @@ function install_delta() {
         return ${FAILURE}
     fi
 
+    clear_last_n_lines 1
+    banner_color 0 "magenta" "*" "delta installed" 1
+
     # delta config settings
     git config --global core.pager delta
     git config --global delta.navigate true
